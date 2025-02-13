@@ -1189,6 +1189,13 @@ ORDER BY eo.ano_da_emenda DESC;
 | 2015 | 3516461496.89 | 25864983.41 | 3490596513.48 |
 | 2014 | 6162372099.08 | 140289522.84 | 6022082576.24 |
 
+Explicação da Consulta
+	- Objetivo: Obter o valor total não pago das emendas parlamentares para cada ano.
+	- Cálculo:
+	- O valor não pago é calculado como a diferença entre o valor empenhado e o valor pago.
+	- Agrupamento: A soma é realizada por ano (ano_da_emenda).
+	- Ordenação: Os resultados são apresentados em ordem decrescente, do ano mais recente para o mais antigo.
+
 ## Consulta 2 - Valores das Emendas Parlamentares agrupadas por Autor
 ```SQL
 SELECT 
@@ -1202,4 +1209,810 @@ GROUP BY a.nome_do_autor_da_emenda
 ORDER BY total_pago DESC
 LIMIT 16;
 ```
+
+| autor | total\_empenhado | total\_liquidado | total\_pago |
+| :--- | :--- | :--- | :--- |
+| Autor Desconhecido | 40830898740.07 | 25510952132.21 | 25396901070.30 |
+| RELATOR GERAL | 58342641087.55 | 25896505316.81 | 25328708980.11 |
+| COM. DA SAUDE | 5813745164.56 | 5533105803.00 | 5533105803.00 |
+| BANCADA DO CEARA | 1751249020.99 | 1500205747.34 | 1497841584.47 |
+| BANCADA DO PIAUI | 1736340391.15 | 1376741284.96 | 1376642841.45 |
+| BANCADA DO MARANHAO | 1731737666.71 | 1226426561.11 | 1207956033.59 |
+| BANCADA DO PARA | 1891740837.34 | 1170166458.52 | 1157917806.30 |
+| COM. ASSUNTOS SOCIAIS | 1201116188.30 | 1149277698.67 | 1149277698.67 |
+| BANCADA DE SANTA CATARINA | 1853852859.69 | 1103758551.72 | 1102572470.75 |
+| BANCADA DO AMAZONAS | 1918237518.24 | 1084002916.94 | 1080439443.83 |
+| BANCADA DE SAO PAULO | 1716782597.48 | 1064116377.01 | 1059816895.27 |
+| BANCADA DO RIO DE JANEIRO | 2036128253.02 | 947127183.57 | 926705362.06 |
+| BANCADA DE ALAGOAS | 1675439412.81 | 913773900.71 | 901241831.16 |
+| BANCADA DE MINAS GERAIS | 1730898560.84 | 905143113.37 | 897967482.40 |
+| BANCADA DO RIO GRANDE DO NORTE | 2300097884.72 | 922272496.68 | 893779200.72 |
+| BANCADA DE RONDONIA | 2187925551.10 | 871539724.03 | 842880747.27 |
+
+
+Explicação da Consulta
+	- Objetivo: Exibir os valores empenhados, liquidados e pagos das emendas parlamentares agrupados por autor.
+	- Cálculo:
+	- total_empenhado: Soma dos valores empenhados por cada autor.
+	- total_liquidado: Soma dos valores que foram liquidados (formalizados para pagamento).
+	- total_pago: Soma dos valores efetivamente pagos ao autor.
+	- Agrupamento: Os valores são agrupados por nome_do_autor_da_emenda.
+	- Ordenação: Os resultados são ordenados pelo total_pago, do maior para o menor.
+	- Limitação: Exibe os 16 primeiros registros, conforme solicitado.
+
+
+## Consulta 3 - Áreas de atuação governamental com maior volume de recursos
+
+```SQL
+SELECT 
+    f.nome_funcao AS area_atuacao,
+    s.nome_subfuncao AS subarea_atuacao,
+    SUM(eo.valor_empenhado) AS total_empenhado,
+    SUM(eo.valor_liquidado) AS total_liquidado,
+    SUM(eo.valor_pago) AS total_pago
+FROM emendas_otimizada eo
+JOIN funcao f ON eo.id_funcao = f.codigo_funcao
+JOIN subfuncao s ON eo.id_subfuncao = s.codigo_subfuncao
+GROUP BY f.nome_funcao, s.nome_subfuncao
+ORDER BY total_pago DESC
+LIMIT 20;
+```
+Explicação da Consulta
+- Objetivo: Identificar as áreas de atuação do governo que receberam os maiores volumes de recursos através das emendas parlamentares.
+- Cálculo:
+- total_empenhado: Soma dos valores empenhados por função e subfunção governamental.
+- total_liquidado: Soma dos valores liquidados, indicando o montante já formalizado para pagamento.
+- total_pago: Soma dos valores efetivamente pagos dentro da função e subfunção.
+- Agrupamento: Os valores são agrupados por função e subfunção governamental.
+- Ordenação: O resultado é ordenado pelo total_pago, do maior para o menor, permitindo visualizar quais áreas receberam mais recursos.
+
+## Consulta 4 - Valores das Emendas Parlamentares agrupadas por Unidade da Federação
+```SQL
+SELECT 
+    e.sigla_uf AS unidade_federativa,
+    e.nome_estado AS estado,
+    SUM(eo.valor_empenhado) AS total_empenhado,
+    SUM(eo.valor_liquidado) AS total_liquidado,
+    SUM(eo.valor_pago) AS total_pago
+FROM emendas_otimizada eo
+JOIN estado e ON eo.id_estado = e.id_estado
+WHERE eo.ano_da_emenda = 2024
+GROUP BY e.sigla_uf, e.nome_estado
+ORDER BY total_pago DESC;
+```
+| unidade\_federativa | estado | total\_empenhado | total\_liquidado | total\_pago |
+| :--- | :--- | :--- | :--- | :--- |
+| SP | São Paulo | 930430515.39 | 438719419.75 | 433206584.03 |
+| DF | Distrito Federal | 598253535.23 | 240147807.44 | 235140053.63 |
+| BA | Bahia | 489229457.56 | 214896677.72 | 204937278.51 |
+| MS | Mato Grosso do Sul | 300591848.55 | 199004065.34 | 197860526.11 |
+| AP | Amapá | 407638542.53 | 136560619.89 | 136495568.84 |
+| MT | Mato Grosso | 282931080.15 | 137564425.64 | 133252356.11 |
+| AC | Acre | 394209366.24 | 120343252.13 | 115430326.36 |
+| PR | Paraná | 260402227.60 | 90897302.54 | 90722578.26 |
+| AM | Amazonas | 140025576.32 | 85803271.29 | 84798380.93 |
+| RJ | Rio de Janeiro | 744013253.05 | 100043735.14 | 80805095.60 |
+| CE | Ceará | 117164198.85 | 69476028.36 | 70118491.55 |
+| SE | Sergipe | 172365641.24 | 70110439.45 | 69565182.88 |
+| AL | Alagoas | 157660480.66 | 70621975.80 | 69208156.80 |
+| MA | Maranhão | 118161632.22 | 67920023.54 | 67173339.36 |
+| PB | Paraíba | 165568875.66 | 63040832.74 | 61547806.66 |
+| RS | Rio Grande do Sul | 195646541.52 | 60509028.73 | 59648031.64 |
+| RO | Rondônia | 121337323.24 | 60745521.48 | 59377590.45 |
+| ES | Espírito Santo | 259673559.26 | 62441931.20 | 55547718.89 |
+| PA | Pará | 123783086.22 | 53595939.95 | 52766905.14 |
+| PE | Pernambuco | 260855475.26 | 53979573.40 | 51010436.53 |
+| MG | Minas Gerais | 231421284.04 | 48715054.81 | 44331249.32 |
+| RR | Roraima | 156017365.56 | 43524749.37 | 42511784.01 |
+| RN | Rio Grande do Norte | 113235218.46 | 41552001.75 | 39058333.52 |
+| SC | Santa Catarina | 119020464.61 | 38709458.42 | 38671148.32 |
+| TO | Tocantins | 167345844.25 | 35389461.52 | 35034669.05 |
+| PI | Piauí | 51875714.98 | 28135115.66 | 27751418.10 |
+| GO | Goiás | 113433210.98 | 12889509.70 | 7137978.20 |
+
+
+Explicação da Consulta
+- Objetivo: Obter o total de valores empenhados, liquidados e pagos por Unidade da Federação (UF) para as emendas parlamentares de 2024.
+- Filtros:
+- Apenas emendas do ano de 2024 (WHERE eo.ano_da_emenda = 2024).
+- Cálculo:
+- total_empenhado: Soma dos valores empenhados por estado.
+- total_liquidado: Soma dos valores liquidados por estado.
+- total_pago: Soma dos valores pagos por estado.
+- Agrupamento: Os valores são agrupados por estado, identificados pelo sigla_uf (UF) e nome_estado.
+- Ordenação: O resultado é ordenado pelo total_pago em ordem decrescente (ORDER BY total_pago DESC).
+
+## Consulta 5 - Cidades/Municípios com maior volume de recursos em 2024
+```SQL
+SELECT 
+    c.nome_cidade AS cidade,
+    e.sigla_uf AS unidade_federativa,
+    SUM(eo.valor_empenhado) AS total_empenhado,
+    SUM(eo.valor_liquidado) AS total_liquidado,
+    SUM(eo.valor_pago) AS total_pago
+FROM emendas_otimizada eo
+JOIN cidade c ON eo.id_cidade = c.id_cidade
+JOIN estado e ON c.id_estado = e.id_estado
+WHERE eo.ano_da_emenda = 2024
+GROUP BY c.nome_cidade, e.sigla_uf
+ORDER BY total_pago DESC
+LIMIT 20;
+```
+| cidade | unidade\_federativa | total\_empenhado | total\_liquidado | total\_pago |
+| :--- | :--- | :--- | :--- | :--- |
+| BOA VISTA | RR | 205157827.00 | 50447556.64 | 50199596.04 |
+| DUQUE DE CAXIAS | RJ | 45341024.00 | 45341024.00 | 45341024.00 |
+| ARAPIRACA | AL | 46346879.00 | 41402749.00 | 41402749.00 |
+| CARIACICA | ES | 50871218.00 | 40874877.00 | 40874877.00 |
+| SÃO JOÃO DE MERITI | RJ | 39198584.00 | 39198584.00 | 39198584.00 |
+| TUCURUÍ | PA | 37871585.00 | 37871585.00 | 37871585.00 |
+| MURIAÉ | MG | 36137850.00 | 35200000.00 | 35200000.00 |
+| COARI | AM | 31634455.83 | 31434456.00 | 31434456.00 |
+| MANAUS | AM | 45144107.73 | 30411038.59 | 30411038.59 |
+| RIO DE JANEIRO | RJ | 42353257.74 | 28146830.46 | 28146830.46 |
+| MAGÉ | RJ | 25600000.00 | 25600000.00 | 25600000.00 |
+| SÃO GONÇALO | RJ | 32382013.00 | 23297821.00 | 23297821.00 |
+| OSASCO | SP | 22000000.00 | 22000000.00 | 22000000.00 |
+| EMBU | SP | 20260000.00 | 20260000.00 | 20260000.00 |
+| CARAPICUÍBA | SP | 20100000.00 | 20100000.00 | 20100000.00 |
+| UBERLÂNDIA | MG | 20934477.48 | 19943876.81 | 19943876.81 |
+| CURITIBA | PR | 20037896.00 | 19837896.00 | 19837896.00 |
+| PARINTINS | AM | 19685679.00 | 19685679.00 | 19685679.00 |
+| ANANINDEUA | PA | 17535792.00 | 17535792.00 | 17535792.00 |
+| GUARAREMA | SP | 16833601.00 | 16833601.00 | 16833601.00 |
+
+
+Explicação da Consulta
+- Objetivo: Identificar os 20 municípios que receberam maior volume de recursos (pagos) via emendas parlamentares no ano de 2024.
+- Filtros:
+- Considera apenas emendas de 2024 (WHERE eo.ano_da_emenda = 2024).
+- Cálculo:
+- total_empenhado: Soma dos valores empenhados por município.
+- total_liquidado: Soma dos valores liquidados por município.
+- total_pago: Soma dos valores pagos por município.
+- Agrupamento:
+- Os valores são agrupados por cidade e Unidade da Federação (UF).
+- Ordenação:
+- Ordenado pelo total_pago em ordem decrescente (ORDER BY total_pago DESC).
+- Limitação:
+- Retorna apenas os 20 municípios com maior volume de recursos pagos (LIMIT 20).
+
+## Consulta 6 - Análise de Eficiência das Emendas Parlamentares - Relação entre Valor Empenhado e Valor Pago, considerando Autor, Estado e Função Governamental
+```SQL
+WITH Emendas_Agrupadas AS (
+    SELECT
+        a.nome_do_autor_da_emenda AS autor,
+        e.sigla_uf AS unidade_federativa,
+        f.nome_funcao AS funcao,
+        SUM(eo.valor_empenhado) AS total_empenhado,
+        SUM(eo.valor_pago) AS total_pago,
+        COUNT(eo.id_emenda) AS total_emendas
+    FROM emendas_otimizada eo
+    JOIN autor a ON eo.id_autor = a.codigo_do_autor_da_emenda
+    JOIN estado e ON eo.id_estado = e.id_estado
+    JOIN funcao f ON eo.id_funcao = f.codigo_funcao
+    GROUP BY a.nome_do_autor_da_emenda, e.sigla_uf, f.nome_funcao
+),
+Desempenho_Execucao AS (
+    SELECT
+        autor,
+        unidade_federativa,
+        funcao,
+        total_empenhado,
+        total_pago,
+        total_emendas,
+        CASE
+            WHEN total_empenhado = 0 THEN 'Sem Execução'
+            WHEN total_pago / total_empenhado >= 0.9 THEN 'Alta Execução'
+            WHEN total_pago / total_empenhado >= 0.5 THEN 'Execução Moderada'
+            ELSE 'Baixa Execução'
+        END AS classificacao_execucao,
+        ROUND((total_pago / NULLIF(total_empenhado, 0)) * 100, 2) AS percentual_executado
+    FROM Emendas_Agrupadas
+)
+SELECT * FROM Desempenho_Execucao
+ORDER BY percentual_executado DESC, total_empenhado DESC
+LIMIT 50;
+```
+
+| autor | unidade\_federativa | funcao | total\_empenhado | total\_pago | total\_emendas | classificacao\_execucao | percentual\_executado |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Autor Desconhecido | CE | Gestão ambiental | 157460002.00 | 157460002.00 | 2 | Alta Execução | 100.00 |
+| BANCADA DO RIO GRANDE DO SUL | RS | Saúde | 138777477.00 | 138777477.00 | 10 | Alta Execução | 100.00 |
+| BANCADA DE SERGIPE | SP | Saúde | 118458412.00 | 118458412.00 | 5 | Alta Execução | 100.00 |
+| BANCADA DE PERNAMBUCO | PE | Saúde | 65978303.00 | 65978303.00 | 4 | Alta Execução | 100.00 |
+| BANCADA DE ALAGOAS | SP | Saúde | 57710906.00 | 57710906.00 | 3 | Alta Execução | 100.00 |
+| BANCADA DO AMAZONAS | AM | Saúde | 57624188.00 | 57624188.00 | 2 | Alta Execução | 100.00 |
+| BANCADA DO RIO GRANDE DO SUL | RS | Assistência social | 45016621.99 | 45016621.99 | 2 | Alta Execução | 100.00 |
+| STEFANO AGUIAR | MG | Saúde | 45008117.00 | 45008117.00 | 7 | Alta Execução | 100.00 |
+| BANCADA DE RONDONIA | RO | Saúde | 43311964.00 | 43311964.00 | 2 | Alta Execução | 100.00 |
+| PASTOR SARGENTO ISIDORIO | BA | Saúde | 42916240.00 | 42916240.00 | 3 | Alta Execução | 100.00 |
+| EDUARDO GIRAO | SP | Saúde | 31683006.00 | 31683006.00 | 3 | Alta Execução | 100.00 |
+| BANCADA DE RORAIMA | SP | Saúde | 30841550.00 | 30841550.00 | 1 | Alta Execução | 100.00 |
+| OLIVAL MARQUES | PA | Saúde | 30251697.00 | 30251697.00 | 3 | Alta Execução | 100.00 |
+| RICARDO SILVA | SP | Saúde | 30000000.00 | 30000000.00 | 1 | Alta Execução | 100.00 |
+| BANCADA DO DISTRITO FEDERAL | DF | Trabalho | 29612094.00 | 29612094.00 | 1 | Alta Execução | 100.00 |
+| FLAVIA ARRUDA | GO | Saúde | 25481984.00 | 25481984.00 | 1 | Alta Execução | 100.00 |
+| BANCADA DE RONDONIA | RO | Encargos especiais | 25000000.00 | 25000000.00 | 1 | Alta Execução | 100.00 |
+| RICARDO DA KAROL | RJ | Desporto e lazer | 24050968.00 | 24050967.99 | 5 | Alta Execução | 100.00 |
+| RELATOR GERAL | SC | Ciência e Tecnologia | 20400371.00 | 20400371.00 | 1 | Alta Execução | 100.00 |
+| BANCADA DO MARANHAO | SP | Saúde | 20125526.00 | 20125526.00 | 3 | Alta Execução | 100.00 |
+| DANIELLA RIBEIRO | PB | Encargos especiais | 19367425.00 | 19367425.00 | 2 | Alta Execução | 100.00 |
+| JORGE GOETTEN | SC | Saúde | 18936000.00 | 18936000.00 | 1 | Alta Execução | 100.00 |
+| PROFESSORA GORETH | AP | Saúde | 18935793.00 | 18935793.00 | 1 | Alta Execução | 100.00 |
+| PASTOR SARGENTO ISIDORIO | BA | Encargos especiais | 18935792.00 | 18935792.00 | 1 | Alta Execução | 100.00 |
+| FABIO GARCIA | MT | Encargos especiais | 18871585.00 | 18871585.00 | 1 | Alta Execução | 100.00 |
+| BANCADA DE MINAS GERAIS | MG | Comunicações | 18816356.00 | 18816356.00 | 1 | Alta Execução | 100.00 |
+| BANCADA DO MATO GROSSO | SP | Saúde | 18523034.00 | 18523034.00 | 2 | Alta Execução | 100.00 |
+| DUARTE JR. | MA | Encargos especiais | 18235792.00 | 18235792.00 | 1 | Alta Execução | 100.00 |
+| SORAYA THRONICKE | MS | Encargos especiais | 18130973.00 | 18130973.00 | 1 | Alta Execução | 100.00 |
+| BANCADA DO PIAUI | SP | Saúde | 17159464.00 | 17159464.00 | 1 | Alta Execução | 100.00 |
+| DUARTE JR. | MA | Saúde | 16935793.00 | 16935793.00 | 1 | Alta Execução | 100.00 |
+| TITO | BA | Saúde | 16110221.00 | 16110221.00 | 2 | Alta Execução | 100.00 |
+| BIRA DO PINDARE | MA | Encargos especiais | 16051699.00 | 16051699.00 | 1 | Alta Execução | 100.00 |
+| JONES MOURA | RJ | Desporto e lazer | 16051699.00 | 16051698.99 | 2 | Alta Execução | 100.00 |
+| ROSANGELA MORO | SP | Encargos especiais | 15500000.00 | 15500000.00 | 2 | Alta Execução | 100.00 |
+| EDUARDO GOMES | SP | Saúde | 15000000.00 | 15000000.00 | 2 | Alta Execução | 100.00 |
+| GERALDO RESENDE | MS | Encargos especiais | 14588000.00 | 14588000.00 | 1 | Alta Execução | 100.00 |
+| RODOLFO NOGUEIRA | MS | Encargos especiais | 14265792.00 | 14265792.00 | 3 | Alta Execução | 100.00 |
+| ACACIO FAVACHO | AP | Saúde | 14149741.00 | 14149741.00 | 2 | Alta Execução | 100.00 |
+| MARCOS AURELIO SAMPAIO | PI | Saúde | 13639993.00 | 13639993.00 | 2 | Alta Execução | 100.00 |
+| BANCADA DE TOCANTINS | SP | Saúde | 12800000.00 | 12800000.00 | 2 | Alta Execução | 100.00 |
+| DAGOBERTO | MS | Encargos especiais | 12455000.00 | 12455000.00 | 1 | Alta Execução | 100.00 |
+| SOCORRO NERI | AC | Saúde | 11635682.00 | 11635682.00 | 3 | Alta Execução | 100.00 |
+| CORONEL ULYSSES | AC | Saúde | 11500000.00 | 11500000.00 | 1 | Alta Execução | 100.00 |
+| GERLEN DINIZ | AC | Encargos especiais | 10950000.00 | 10950000.00 | 1 | Alta Execução | 100.00 |
+| ANDRE ABDON | AP | Encargos especiais | 10793279.00 | 10793279.00 | 2 | Alta Execução | 100.00 |
+| GERLEN DINIZ | AC | Saúde | 10649989.00 | 10649989.00 | 2 | Alta Execução | 100.00 |
+| RAIMUNDO SANTOS | PA | Saúde | 10000000.00 | 10000000.00 | 1 | Alta Execução | 100.00 |
+| BANCADA DO PARANA | PR | Ciência e Tecnologia | 10000000.00 | 10000000.00 | 1 | Alta Execução | 100.00 |
+| JESSICA SALES | AC | Encargos especiais | 9966248.00 | 9966248.00 | 1 | Alta Execução | 100.00 |
+
+Explicação da Consulta
+
+A consulta utiliza CTEs (Common Table Expressions) para melhorar a legibilidade e modularizar a análise:
+1.	CTE Emendas_Agrupadas
+- Agrupa as emendas por:
+- Autor da emenda
+- Unidade da Federação (UF)
+- Função governamental (área de aplicação da verba)
+- Calcula os totais:
+- Valor empenhado
+- Valor pago
+- Quantidade de emendas registradas
+
+2.	CTE Desempenho_Execucao
+- Cria uma classificação de execução das emendas baseada no percentual pago:
+- “Sem Execução” → Emendas sem valores empenhados.
+- “Alta Execução” → Acima de 90% do valor empenhado foi pago.
+- “Execução Moderada” → Entre 50% e 90% foi pago.
+- “Baixa Execução” → Abaixo de 50% foi pago.
+- Adiciona um percentual de execução formatado (%).
+
+3.	Consulta Final
+- Ordena os resultados primeiro pelo percentual executado e depois pelo total empenhado.
+- Retorna os 50 registros mais relevantes.
+
+## Consulta 7 - Quantidade de Emendas de Cada Autor
+```SQL
+SELECT 
+    a.nome_do_autor_da_emenda AS autor,
+    COUNT(eo.id_emenda) AS total_emendas
+FROM emendas_otimizada eo
+JOIN autor a ON eo.id_autor = a.codigo_do_autor_da_emenda
+GROUP BY a.nome_do_autor_da_emenda
+ORDER BY total_emendas DESC;
+```
+
+| autor | total\_emendas |
+| :--- | :--- |
+| Autor Desconhecido | 15534 |
+| RELATOR GERAL | 2138 |
+| JANDIRA FEGHALI | 200 |
+| GLAUBER BRAGA | 191 |
+| ALESSANDRO MOLON | 190 |
+| LIDICE DA MATA | 184 |
+| CARLOS SAMPAIO | 183 |
+| IVAN VALENTE | 180 |
+| PEDRO UCZAI | 180 |
+| PR. MARCO FELICIANO | 177 |
+| VICENTINHO | 176 |
+| LUIZA ERUNDINA | 176 |
+| MARIA DO ROSARIO | 174 |
+| ERIKA KOKAY | 173 |
+| PAULO TEIXEIRA | 173 |
+| BOHN GASS | 169 |
+| PADRE JOAO | 168 |
+| TASSO JEREISSATI | 167 |
+| STEFANO AGUIAR | 166 |
+| BENEDITA DA SILVA | 163 |
+| LEONARDO MONTEIRO | 162 |
+| GONZAGA PATRIOTA | 161 |
+| HELDER SALOMAO | 161 |
+| EFRAIM FILHO | 161 |
+| EDUARDO BOLSONARO | 160 |
+| REGINALDO LOPES | 159 |
+| DAMIAO FELICIANO | 158 |
+| OTTO ALENCAR | 157 |
+| PATRUS ANANIAS | 156 |
+| ALAN RICK | 156 |
+| JEFFERSON CAMPOS | 154 |
+| PEDRO CUNHA LIMA | 152 |
+| GLEISI HOFFMANN | 150 |
+| HUMBERTO COSTA | 150 |
+| PAULO FREIRE | 147 |
+| JOAO CAMPOS | 146 |
+| ZE SILVA | 145 |
+| HENRIQUE FONTANA | 143 |
+| CHICO D'ANGELO | 143 |
+| AUGUSTO COUTINHO | 143 |
+| RUBENS OTONI | 142 |
+| GILBERTO NASCIMENTO | 141 |
+| PAULAO | 138 |
+| EROS BIONDINI | 137 |
+| ZENAIDE MAIA | 137 |
+| SOSTENES CAVALCANTE | 136 |
+| DANIEL ALMEIDA | 135 |
+| ESPERIDIAO AMIN | 135 |
+| HUGO LEAL | 135 |
+| ANTONIO BRITO | 135 |
+| JOAO DANIEL | 133 |
+| WALDENOR PEREIRA | 132 |
+| ELI CORREA FILHO | 129 |
+| ALCEU MOREIRA | 128 |
+| TIRIRICA | 128 |
+| CARMEN ZANOTTO | 127 |
+| SERGIO PETECAO | 127 |
+| RODRIGO MAIA | 127 |
+| LUIZIANNE LINS | 127 |
+| TADEU ALENCAR | 127 |
+| WELLINGTON ROBERTO | 125 |
+| VENEZIANO VITAL DO REGO | 125 |
+| ALICE PORTUGAL | 124 |
+| FABIO REIS | 124 |
+| JULIO DELGADO | 124 |
+| JOAQUIM PASSARINHO | 124 |
+| BRUNA FURLAN | 124 |
+| ORLANDO SILVA | 122 |
+| ANDRE FIGUEIREDO | 121 |
+| CARLOS ZARATTINI | 121 |
+| FLAVIO BOLSONARO | 120 |
+| PROFESSORA MARCIVANIA | 120 |
+| SORAYA SANTOS | 120 |
+| ROSANGELA GOMES | 119 |
+| AFONSO HAMM | 118 |
+| LUIZ NISHIMORI | 117 |
+| RANDOLFE RODRIGUES | 116 |
+| FERNANDA MELCHIONNA | 115 |
+| LEANDRE | 115 |
+| EDUARDO CURY | 114 |
+| ANDRE ABDON | 114 |
+| VICENTINHO JUNIOR | 113 |
+| ALIEL MACHADO | 112 |
+| MARCIO ALVINO | 112 |
+| MARCIO MARINHO | 112 |
+| MISAEL VARELLA | 112 |
+| ROGERIO CORREIA | 109 |
+| DOMINGOS SAVIO | 109 |
+| EVAIR DE MELO | 108 |
+| GIACOBO | 108 |
+| MARCON | 108 |
+| NILTO TATTO | 108 |
+| JULIO CESAR | 107 |
+| ROBERTO DE LUCENA | 107 |
+| LEO DE BRITO | 106 |
+| PAULO PIMENTA | 105 |
+| HIRAN GONCALVES | 105 |
+| ALTINEU CORTES | 104 |
+| MARGARIDA SALOMAO | 104 |
+| HELIO LOPES | 104 |
+| JOSE GUIMARAES | 104 |
+| MOSES RODRIGUES | 104 |
+| VANDER LOUBET | 103 |
+| CLAUDIO CAJADO | 103 |
+| JEAN WYLLYS | 103 |
+| PASTOR EURICO | 103 |
+| TULIO GADELHA | 102 |
+| JORGINHO MELLO | 102 |
+| ZECA DIRCEU | 102 |
+| LUIZ COUTO | 101 |
+| ALEXANDRE SERFIOTIS | 101 |
+| ARLINDO CHINAGLIA | 101 |
+| SAMIA BOMFIM | 101 |
+| TALIRIA PETRONE | 101 |
+| LAERCIO OLIVEIRA | 101 |
+| JOSE NUNES | 101 |
+| DELEGADO EDER MAURO | 100 |
+| CLEBER VERDE | 100 |
+| PEDRO CHAVES | 100 |
+| FLAVIA MORAIS | 100 |
+| ACIR GURGACZ | 100 |
+| CHICO ALENCAR | 99 |
+| HELIO LEITE | 99 |
+| MARIA DO CARMO ALVES | 99 |
+| FABIO RAMALHO | 99 |
+| ATILA LINS | 98 |
+| JOSE ROCHA | 97 |
+| MAGDA MOFATTO | 97 |
+| JADER BARBALHO | 97 |
+| DANILO FORTE | 97 |
+| EVANDRO ROMAN | 96 |
+| LUIZ CARLOS HAULY | 96 |
+| ALVARO DIAS | 96 |
+| VANDERLEI MACRIS | 96 |
+| BANCADA DO RIO DE JANEIRO | 95 |
+| ROSANA VALLE | 95 |
+| LINCOLN PORTELA | 95 |
+| EDUARDO DA FONTE | 95 |
+| MARA GABRILLI | 95 |
+| FABIO MITIDIERI | 94 |
+| JORGE SOLLA | 94 |
+| MARIANA CARVALHO | 94 |
+| ROBERTO ALVES | 94 |
+| MIGUEL LOMBARDI | 94 |
+| LASIER MARTINS | 94 |
+| JOSE SERRA | 93 |
+| LUIS CARLOS HEINZE | 93 |
+| FERNANDO MONTEIRO | 93 |
+| ELMANO FERRER | 93 |
+| MIRO TEIXEIRA | 92 |
+| JO MORAES | 92 |
+| ALENCAR SANTANA | 92 |
+| OMAR AZIZ | 92 |
+| BETO ROSADO | 91 |
+| SUBTENENTE GONZAGA | 91 |
+| SILVIO COSTA | 91 |
+| BACELAR | 90 |
+| MARIO HERINGER | 90 |
+| AFONSO MOTTA | 90 |
+| IZALCI LUCAS | 90 |
+| MAGNO MALTA | 90 |
+| PAULO MAGALHAES | 90 |
+| LUIZ SERGIO | 90 |
+| LINDBERGH FARIAS | 90 |
+| JERONIMO GOERGEN | 90 |
+| CORONEL ARMANDO | 90 |
+| OTAVIO LEITE | 90 |
+| WALNEY ROCHA | 90 |
+| JARBAS VASCONCELOS | 90 |
+| RAFAEL MOTTA | 90 |
+| BANCADA DO RIO GRANDE DO SUL | 89 |
+| CELSO RUSSOMANNO | 89 |
+| JAIR BOLSONARO | 89 |
+| RUBENS BUENO | 89 |
+| GIOVANI CHERINI | 89 |
+| LUCIANO DUCCI | 89 |
+| PAULO ROCHA | 89 |
+| DULCE MIRANDA | 88 |
+| RAIMUNDO COSTA | 88 |
+| AELTON FREITAS | 88 |
+| GUSTAVO FRUET | 88 |
+| JOSE AIRTON | 88 |
+| AUREO | 88 |
+| PROFESSORA DORINHA SEABRA REZENDE | 88 |
+| PAULO RAMOS | 87 |
+| FAUSTO PINATO | 87 |
+| NATALIA BONAVIDES | 87 |
+| MARCELO FREIXO | 87 |
+| HEITOR SCHUCH | 87 |
+| JOSE AGRIPINO | 87 |
+| JUTAHY JUNIOR | 87 |
+| JAQUES WAGNER | 87 |
+| NELSON PELLEGRINO | 87 |
+| POMPEO DE MATTOS | 87 |
+| DIMAS FABIANO | 87 |
+| LEILA BARROS | 86 |
+| DAVID MIRANDA | 86 |
+| DIEGO ANDRADE | 86 |
+| VITOR LIPPI | 86 |
+| EDUARDO GIRAO | 85 |
+| ROMARIO | 85 |
+| SIMONE TEBET | 85 |
+| BANCADA DA BAHIA | 84 |
+| LUCAS REDECKER | 84 |
+| ROGERIO MARINHO | 84 |
+| SERGIO SOUZA | 84 |
+| LUCIANA SANTOS | 84 |
+| JOSE RICARDO | 83 |
+| DANRLEI DE DEUS HINTERHOLZ | 83 |
+| JUSCELINO FILHO | 83 |
+| ALEXANDRE LEITE | 83 |
+| CELSO MALDANER | 83 |
+| JORGE CORTE REAL | 83 |
+| BANCADA DE TOCANTINS | 82 |
+| BANCADA DE PERNAMBUCO | 82 |
+| BANCADA DA PARAIBA | 82 |
+| ARNALDO JARDIM | 82 |
+| BANCADA DE RONDONIA | 81 |
+| DARCISIO PERONDI | 81 |
+| WELLINGTON FAGUNDES | 81 |
+| PAULO GANIME | 81 |
+| SERGIO BRITO | 81 |
+| WALTER ALVES | 81 |
+| AGUINALDO RIBEIRO | 81 |
+| COVATTI FILHO | 80 |
+| DELEY | 80 |
+| DILCEU SPERAFICO | 80 |
+| FLAVIANO MELO | 80 |
+| GENERAL GIRAO | 80 |
+| CHRIS TONIETTO | 80 |
+| TELMARIO MOTA | 80 |
+| ULDURICO JUNIOR | 80 |
+| TEREZA CRISTINA | 80 |
+| BANCADA DE RORAIMA | 79 |
+| BANCADA DO AMAPA | 79 |
+| MAURO BENEVIDES FILHO | 79 |
+| OSMAR SERRAGLIO | 79 |
+| RICARDO TEOBALDO | 79 |
+| ROBERIO MONTEIRO | 78 |
+| BANCADA DE SERGIPE | 78 |
+| EDUARDO GOMES | 78 |
+| BANCADA DO RIO GRANDE DO NORTE | 78 |
+| ROSE DE FREITAS | 78 |
+| BANCADA DO MATO GROSSO DO SUL | 78 |
+| BANCADA DE GOIAS | 78 |
+| JULIO LOPES | 78 |
+| JOSE MENTOR | 78 |
+| NELSON MEURER | 78 |
+| DELEGADO WALDIR | 78 |
+| SARAIVA FELIPE | 78 |
+| BETO FARO | 78 |
+| MARCELO ARO | 78 |
+| TABATA AMARAL | 77 |
+| GORETE PEREIRA | 77 |
+| GUILHERME MUSSI | 77 |
+| DANIEL VILELA | 76 |
+| BANCADA DE ALAGOAS | 76 |
+| RODRIGO CUNHA | 76 |
+| WOLNEY QUEIROZ | 76 |
+| NILSON PINTO | 76 |
+| FELIPE MAIA | 76 |
+| DR. LUIZ OVANDO | 76 |
+| JOAO PAULO PAPA | 76 |
+| RODRIGO DE CASTRO | 76 |
+| VICENTE CANDIDO | 76 |
+| CARLOS JORDY | 76 |
+| RONALDO CARLETTO | 76 |
+| CARLOS GOMES | 75 |
+| CACA LEAO | 75 |
+| JANETE CAPIBERIBE | 75 |
+| BANCADA DO MARANHAO | 75 |
+| BANCADA DO ACRE | 75 |
+| GENERAL PETERNELLI | 75 |
+| LUCAS VERGILIO | 75 |
+| BIA KICIS | 75 |
+| DR. JORGE SILVA | 75 |
+| BANCADA DE SANTA CATARINA | 74 |
+| BANCADA DO ESPIRITO SANTO | 74 |
+| SORAYA THRONICKE | 74 |
+| PAULINHO DA FORCA | 74 |
+| GABRIEL GUIMARAES | 74 |
+| ARTHUR OLIVEIRA MAIA | 74 |
+| CLARISSA GAROTINHO | 73 |
+| DIEGO GARCIA | 73 |
+| ZEQUINHA MARINHO | 73 |
+| EDMILSON RODRIGUES | 73 |
+| AROLDE DE OLIVEIRA | 73 |
+| EDUARDO BARBOSA | 73 |
+| FERNANDO AFFONSO COLLOR DE MELLO | 73 |
+| TENENTE LUCIO | 73 |
+| SERGIO VIDIGAL | 73 |
+| ZE GERALDO | 72 |
+| BANCADA DO DISTRITO FEDERAL | 72 |
+| CID GOMES | 72 |
+| MARCIO BITTAR | 72 |
+| JESSICA SALES | 72 |
+| ROGERIO PENINHA MENDONCA | 72 |
+| DR. FREDERICO | 72 |
+| FELIPE BORNIER | 72 |
+| LUIS TIBE | 72 |
+| RODRIGO PACHECO | 72 |
+| ANDRE DE PAULA | 71 |
+| JORGE TADEU MUDALEN | 71 |
+| MAURO LOPES | 71 |
+| VINICIUS FARAH | 71 |
+| PROFESSOR JOZIEL | 71 |
+| OSSESIO SILVA | 71 |
+| CHICO LOPES | 71 |
+| DANIELA DO WAGUINHO | 71 |
+| PAULO FOLETTO | 71 |
+| RUY CARNEIRO | 71 |
+| REJANE DIAS | 71 |
+| ERIVELTON SANTANA | 71 |
+| RUBENS PEREIRA JUNIOR | 71 |
+| BANCADA DO MATO GROSSO | 70 |
+| MARRECA FILHO | 70 |
+| RAIMUNDO GOMES DE MATOS | 70 |
+| AFONSO FLORENCE | 70 |
+| FERNANDO COELHO FILHO | 70 |
+| MAJOR VITOR HUGO | 70 |
+| LUIZ PHILIPPE DE ORLEANS E BRAGANCA | 70 |
+| VINICIUS CARVALHO | 70 |
+| NORMA AYUB | 70 |
+| RUI FALCAO | 69 |
+| ELMAR NASCIMENTO | 69 |
+| AECIO NEVES | 69 |
+| BEBETO | 69 |
+| LEDA SADALA | 69 |
+| SANDERSON | 69 |
+| JOAO MAIA | 69 |
+| RICARDO IZAR | 69 |
+| AUREA CAROLINA | 69 |
+| NEWTON CARDOSO JR | 69 |
+| TONINHO WANDSCHEER | 69 |
+| ELIZIANE GAMA | 68 |
+| ANGELIM | 68 |
+| BANCADA DO CEARA | 68 |
+| CARLOS PORTINHO | 68 |
+| HERMES PARCIANELLO | 68 |
+| PLINIO VALERIO | 68 |
+| LAURA CARNEIRO | 68 |
+| PAULO PAIM | 68 |
+| MARCO MAIA | 68 |
+| ADRIANO DO BALDY | 68 |
+| NIVALDO ALBUQUERQUE | 68 |
+| RENATA ABREU | 68 |
+| BONIFACIO DE ANDRADA | 67 |
+| ATILA LIRA | 67 |
+| MARINHA RAUPP | 67 |
+| PAULA BELMONTE | 67 |
+| MARCELO CALERO | 67 |
+| MANDETTA | 67 |
+| JHC | 67 |
+| DELEGADO ANTONIO FURTADO | 67 |
+| LUIZ CARLOS RAMOS | 67 |
+| MARCELO MATOS | 67 |
+| DARIO BERGER | 67 |
+| HUGO MOTTA | 67 |
+| RONEY NEMER | 67 |
+| ANTONIO IMBASSAHY | 67 |
+| CABO DACIOLO | 66 |
+| BANCADA DO PARANA | 66 |
+| CARLOS MANATO | 66 |
+| JOSE PRIANTE | 66 |
+| JORGE VIANA | 66 |
+| LEOPOLDO MEYER | 66 |
+| RAUL HENRY | 66 |
+| FABIO TRAD | 66 |
+| MARCELO ALVARO ANTONIO | 66 |
+| VALMIR ASSUNCAO | 66 |
+| DANIEL COELHO | 65 |
+| JUNIOR MARRECA | 65 |
+| DANILO CABRAL | 65 |
+| CELSO JACOB | 65 |
+| PAULO AZI | 65 |
+| WILDER MORAIS | 65 |
+| ADELMO CARNEIRO LEAO | 65 |
+| CESAR SOUZA | 65 |
+| SARGENTO FAHUR | 65 |
+| VICENTINHO ALVES | 65 |
+| ALESSANDRO VIEIRA | 65 |
+| HEULER CRUVINEL | 65 |
+| MARCUS VICENTE | 64 |
+| ZE NETO | 64 |
+| VINICIUS GURGEL | 64 |
+| CELIO SILVEIRA | 64 |
+| DAGOBERTO | 64 |
+| FREI ANASTACIO RIBEIRO | 64 |
+| BALEIA ROSSI | 64 |
+| JAIME MARTINS | 64 |
+| ENIO VERRI | 64 |
+| BILAC PINTO | 63 |
+| VANESSA GRAZZIOTIN | 63 |
+| JORGE BRAZ | 63 |
+| STYVENSON VALENTIM | 63 |
+| JULIO CESAR RIBEIRO | 63 |
+| BENES LEOCADIO | 63 |
+| LAZARO BOTELHO | 63 |
+| ELCIONE BARBALHO | 63 |
+| FERNANDO TORRES | 62 |
+| RENAN CALHEIROS | 62 |
+| SIDNEY LEITE | 62 |
+| PROFESSOR ALCIDES | 62 |
+| CABO JUNIO AMARAL | 62 |
+| CAMILO CAPIBERIBE | 62 |
+| BENJAMIN MARANHAO | 62 |
+| JOAO ARRUDA | 62 |
+| TEREZA NELMA | 62 |
+| FELIX MENDONCA JUNIOR | 61 |
+| REGINA SOUSA | 61 |
+| ALBERTO FRAGA | 61 |
+| ALEXANDRE PADILHA | 61 |
+| CABUCU BORGES | 61 |
+| RONALDO BENEDET | 61 |
+| BANCADA DE SAO PAULO | 61 |
+| FELIPE CARRERAS | 61 |
+| CASSIO CUNHA LIMA | 61 |
+| SAGUAS MORAES | 61 |
+| FLAVIO ARNS | 61 |
+| BANCADA DO AMAZONAS | 61 |
+| DR. LEONARDO | 61 |
+| EDIO LOPES | 60 |
+| AIRTON FALEIRO | 60 |
+| DECIO LIMA | 60 |
+| FABIO FARIA | 60 |
+| FABIO SOUSA | 60 |
+| BANCADA DO PARA | 60 |
+| CHRISTIANE DE SOUZA YARED | 59 |
+| ANTONIO ANASTASIA | 59 |
+| CARLOS HENRIQUE GAGUIM | 59 |
+| JUAREZ COSTA | 59 |
+| ROBERTO SALES | 59 |
+| LUISA CANZIANI | 59 |
+| FATIMA BEZERRA | 59 |
+| CRISTOVAM BUARQUE | 59 |
+| ANTONIO CARLOS VALADARES | 58 |
+| CONCEICAO SAMPAIO | 58 |
+| SIBA MACHADO | 58 |
+| JEAN PAUL PRATES | 58 |
+| ANGELA AMIN | 58 |
+| CAPITAO FABIO ABREU | 58 |
+| CAPITAO AUGUSTO | 58 |
+| MARCO ANTONIO CABRAL | 58 |
+| MARCIO BIOLCHI | 58 |
+| PEPE VARGAS | 58 |
+| JUNINHO DO PNEU | 58 |
+| SANDRO ALEX | 58 |
+| CHARLES FERNANDES | 58 |
+| WALDIR MARANHAO | 58 |
+| ELIAS VAZ | 58 |
+| LUIZ FERNANDO FARIA | 58 |
+| FABIANO CONTARATO | 58 |
+| ODAIR CUNHA | 58 |
+| RONALDO MARTINS | 57 |
+| ANTONIO BULHOES | 57 |
+| RENILDO CALHEIROS | 57 |
+| RICARDO FERRACO | 57 |
+| CARLA ZAMBELLI | 57 |
+| PROFESSOR ISRAEL BATISTA | 57 |
+| GIVALDO VIEIRA | 57 |
+| OTONI DE PAULA | 57 |
+| LUCIANO BIVAR | 57 |
+| MARCOS SOARES | 57 |
+| IZALCI | 57 |
+| MARCOS MONTES | 56 |
+| LAUDIVIO CARVALHO | 56 |
+| PERPETUA ALMEIDA | 56 |
+| CAPITAO WAGNER | 56 |
+| CAPITAO ALBERTO NETO | 56 |
+| MAJOR OLIMPIO | 56 |
+| NICOLETTI | 56 |
+| JOENIA WAPICHANA | 56 |
+| LEONIDAS CRISTINO | 56 |
+| ALFREDO NASCIMENTO | 56 |
+| JOSE MEDEIROS | 56 |
+| CESAR HALUM | 56 |
+| GEOVANIA DE SA | 55 |
+| RICARDO BARROS | 55 |
+| VALDIR RAUPP | 55 |
+| WILSON SANTIAGO | 55 |
+| JOAO RODRIGUES | 55 |
+| LUCIO MOSQUINI | 55 |
+| HILDO ROCHA | 55 |
+| PAES LANDIM | 55 |
+| DAVI ALCOLUMBRE | 55 |
+| LUCAS BARRETO | 55 |
+| MAILZA GOMES | 55 |
+| WELITON PRADO | 55 |
+| ASSIS DO COUTO | 55 |
+| CAJAR NARDES | 55 |
+| CESAR MESSIAS | 55 |
+| PEDRO WESTPHALEN | 55 |
+| TIAGO DIMAS | 54 |
+| VAIDON OLIVEIRA | 54 |
+| MARCOS ABRAO | 54 |
+| JOAO CAPIBERIBE | 54 |
+| JOSE CARLOS ALELUIA | 54 |
+| ALFREDO KAEFER | 54 |
+| OSMAR TERRA | 54 |
+| MARCOS DO VAL | 54 |
+
+Explicação da Consulta
+1.	Seleciona o nome do autor da emenda.
+2.	Conta a quantidade total de emendas realizadas por cada autor.
+3.	Agrupa os resultados pelo nome do autor para consolidar a contagem.
+4.	Ordena os resultados de forma decrescente, priorizando os autores com maior número de emendas.
+
+
+---
 
