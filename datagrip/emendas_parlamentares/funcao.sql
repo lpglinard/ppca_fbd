@@ -1,4 +1,4 @@
-create table if not exists emendas_parlamentares.funcao
+create table emendas_parlamentares.funcao
 (
     codigo_funcao varchar(50)  not null
         primary key,

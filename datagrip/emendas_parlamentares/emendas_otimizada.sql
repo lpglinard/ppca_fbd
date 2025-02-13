@@ -1,4 +1,4 @@
-create table if not exists emendas_parlamentares.emendas_otimizada
+create table emendas_parlamentares.emendas_otimizada
 (
     id_emenda                       int auto_increment
         primary key,

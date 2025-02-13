@@ -1,4 +1,4 @@
-create table if not exists emendas_parlamentares.emendas_orignal
+create table emendas_parlamentares.emendas_orignal
 (
     codigo_da_emenda                text null,
     ano_da_emenda                   int  null,
