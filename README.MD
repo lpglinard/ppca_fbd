@@ -890,5 +890,316 @@ BEGIN
 END;
 ```
 
+## **Trigger para Auditoria de Inserções (`INSERT`)**
+### **Objetivo**
+Este trigger registra automaticamente todas as novas emendas inseridas na tabela emendas_otimizada, garantindo um histórico completo das operações.
 
+```SQL
+CREATE DEFINER = root@localhost TRIGGER trg_auditoria_emendas_insert
+    AFTER INSERT
+    ON emendas_otimizada
+    FOR EACH ROW
+BEGIN
+    INSERT INTO log_emendas (id_emenda, tipo_operacao, usuario_responsavel, dados_novos)
+    VALUES (
+        NEW.id_emenda,
+        'INSERT',
+        USER(),
+        CONCAT('codigo_da_emenda: ', NEW.codigo_da_emenda, ', ano_da_emenda: ', NEW.ano_da_emenda,
+               ', numero_da_emenda: ', NEW.numero_da_emenda, ', valor_empenhado: ', NEW.valor_empenhado,
+               ', valor_pago: ', NEW.valor_pago)
+    );
+END;
+```
+
+## **Trigger para Auditoria de Atualizações (`UPDATE`)**
+### **Objetivo**
+O trigger de UPDATE rastreia modificações feitas nas emendas, salvando tanto os dados anteriores quanto os dados atualizados.
+
+```SQL
+CREATE DEFINER = root@localhost TRIGGER trg_auditoria_emendas_update
+    AFTER UPDATE
+    ON emendas_otimizada
+    FOR EACH ROW
+BEGIN
+    INSERT INTO log_emendas (id_emenda, tipo_operacao, usuario_responsavel, dados_anteriores, dados_novos)
+    VALUES (
+        OLD.id_emenda,
+        'UPDATE',
+        USER(),
+        CONCAT('codigo_da_emenda: ', OLD.codigo_da_emenda, ', ano_da_emenda: ', OLD.ano_da_emenda,
+               ', numero_da_emenda: ', OLD.numero_da_emenda, ', valor_empenhado: ', OLD.valor_empenhado,
+               ', valor_pago: ', OLD.valor_pago),
+        CONCAT('codigo_da_emenda: ', NEW.codigo_da_emenda, ', ano_da_emenda: ', NEW.ano_da_emenda,
+               ', numero_da_emenda: ', NEW.numero_da_emenda, ', valor_empenhado: ', NEW.valor_empenhado,
+               ', valor_pago: ', NEW.valor_pago)
+    );
+END;
+```
+
+## **Trigger para Integridade de localização**
+### **Objetivo**
+Criamos dois trigger adicionais que impedem a inserção ou atualização de uma emenda na tabela emendas_otimizada caso 
+nenhuma localidade (cidade, estado, região ou abrangência especial) seja informada.
+
+```SQL
+CREATE TRIGGER trg_valida_localidade_emenda
+BEFORE INSERT ON emendas_otimizada
+FOR EACH ROW
+BEGIN
+    IF NEW.id_cidade IS NULL 
+       AND NEW.id_estado IS NULL 
+       AND NEW.id_regiao IS NULL 
+       AND NEW.id_abrangencia IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: A emenda deve ter pelo menos uma localidade definida (cidade, estado, região ou abrangência especial).';
+    END IF;
+END;
+
+CREATE TRIGGER trg_valida_localidade_emenda_update
+BEFORE UPDATE ON emendas_otimizada
+FOR EACH ROW
+BEGIN
+    IF NEW.id_cidade IS NULL 
+       AND NEW.id_estado IS NULL 
+       AND NEW.id_regiao IS NULL 
+       AND NEW.id_abrangencia IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: A emenda deve ter pelo menos uma localidade definida (cidade, estado, região ou abrangência especial).';
+    END IF;
+END;
+```
+1. Trigger trg_valida_localidade_emenda (INSERT)
+- Antes de uma nova emenda ser inserida, ele verifica se todas as colunas de localidade (id_cidade, id_estado, id_regiao, id_abrangencia) estão nulas.
+- Se todas estiverem nulas, um erro é lançado e a inserção é cancelada.
+
+2. Trigger trg_valida_localidade_emenda_update (UPDATE)
+- Antes de uma emenda ser atualizada, ele executa a mesma validação.
+- Se a atualização remover todas as informações de localidade, um erro é lançado e a atualização é rejeitada.
+
+---
+
+# **Visão de Localidade das Emendas**
+A view vw_localidade_emenda foi criada para facilitar consultas sobre as emendas, exibindo de forma clara a localidade
+associada a cada uma delas, sem precisar realizar múltiplos JOINs diretamente nas consultas.
+
+```SQL
+CREATE OR REPLACE VIEW vw_localidade_emenda AS
+SELECT 
+    eo.id_emenda AS id_emenda,
+    CASE
+        WHEN eo.id_cidade IS NOT NULL THEN 
+            CONCAT(c.nome_cidade, ' - ', COALESCE(est.sigla_uf, 'UF Desconhecida'))
+        WHEN eo.id_estado IS NOT NULL THEN 
+            est.nome_estado
+        WHEN eo.id_regiao IS NOT NULL THEN 
+            r.nome_regiao
+        WHEN eo.id_abrangencia IS NOT NULL THEN 
+            ae.nome_abrangencia
+        ELSE 
+            'Localidade indefinida'
+    END AS localidade,
+    eo.ano_da_emenda,
+    f.nome_funcao,
+    s.nome_subfuncao,
+    COALESCE(eo.valor_empenhado, 0.00) AS valor_empenhado,
+    COALESCE(eo.valor_pago, 0.00) AS valor_pago
+FROM emendas_otimizada eo
+LEFT JOIN cidade c ON eo.id_cidade = c.id_cidade
+LEFT JOIN estado est ON c.id_estado = est.id_estado
+LEFT JOIN regiao r ON eo.id_regiao = r.id_regiao
+LEFT JOIN abrangencia_especial ae ON eo.id_abrangencia = ae.id_abrangencia
+LEFT JOIN funcao f ON eo.id_funcao = f.codigo_funcao
+LEFT JOIN subfuncao s ON eo.id_subfuncao = s.codigo_subfuncao;
+```
+
+## Objetivo da View
+- Criar uma representação mais acessível das emendas com as respectivas informações de localidade.
+- Evitar que consultas manuais precisem repetir múltiplos JOINs, simplificando análises e relatórios.
+- Normalizar a apresentação dos dados ao fornecer a localidade em uma única coluna formatada.
+
+
+## Como a Localidade é Determinada?
+
+A prioridade da localidade é definida na seguinte ordem:
+1. Cidade (concatenando nome_cidade e sigla_uf do estado correspondente)
+2. Estado (nome completo do estado)
+3. Região (caso apenas a região esteja informada)
+4. Abrangência Especial (casos como “Nacional”, “Múltiplo” ou “Exterior”)
+5. Caso nenhuma das informações esteja presente, exibe “Localidade indefinida”
+
+Essa hierarquia garante que sempre haja um campo descritivo da localidade da emenda.
+
+
+## Benefícios da View
+
+- Facilita consultas: Os dados já vêm organizados sem a necessidade de JOINs manuais.
+- Padroniza a saída: As informações de localidade seguem uma hierarquia bem definida.
+- Melhora a legibilidade: Permite visualizar rapidamente onde cada emenda está sendo aplicada.
+- Reduz esforço computacional: Evita múltiplos JOINs em consultas frequentes.
+
+---
+
+# **Procedimento Armazenado para Análise de Emendas**
+A procedure sp_analisar_emendas_transparencia tem o objetivo de avaliar a transparência das emendas parlamentares, 
+classificando cada emenda de acordo com o nível de risco financeiro e registrando as análises em um log específico.
+
+```SQL
+CREATE PROCEDURE sp_analisar_emendas_transparencia(IN p_ano_da_emenda INT, IN p_id_autor INT)
+BEGIN
+    -- Declaração de variáveis
+    DECLARE v_id_emenda INT;
+    DECLARE v_ano_da_emenda INT;
+    DECLARE v_nome_autor VARCHAR(255);
+    DECLARE v_localidade VARCHAR(255);
+    DECLARE v_valor_empenhado DECIMAL(15, 2);
+    DECLARE v_valor_liquidado DECIMAL(15, 2);
+    DECLARE v_valor_pago DECIMAL(15, 2);
+    DECLARE v_restos_a_pagar DECIMAL(15, 2);
+    DECLARE v_nivel_risco ENUM('BAIXO', 'MEDIO', 'ALTO');
+    DECLARE v_mensagem TEXT;
+    DECLARE done INT DEFAULT 0;
+
+    -- Cursor para iterar as emendas
+    DECLARE cur_emendas CURSOR FOR
+        SELECT eo.id_emenda, eo.ano_da_emenda, a.nome_do_autor_da_emenda,
+               CASE
+                   WHEN eo.id_cidade IS NOT NULL THEN CONCAT(c.nome_cidade, ' - ', est.sigla_uf)
+                   WHEN eo.id_estado IS NOT NULL THEN est.nome_estado
+                   WHEN eo.id_regiao IS NOT NULL THEN r.nome_regiao
+                   WHEN eo.id_abrangencia IS NOT NULL THEN ae.nome_abrangencia
+                   ELSE 'Localidade indefinida'
+               END AS localidade,
+               eo.valor_empenhado, eo.valor_liquidado, eo.valor_pago, eo.valor_restos_a_pagar_inscritos
+        FROM emendas_otimizada eo
+        LEFT JOIN autor a ON eo.id_autor = a.codigo_do_autor_da_emenda
+        LEFT JOIN cidade c ON eo.id_cidade = c.id_cidade
+        LEFT JOIN estado est ON c.id_estado = est.id_estado
+        LEFT JOIN regiao r ON eo.id_regiao = r.id_regiao
+        LEFT JOIN abrangencia_especial ae ON eo.id_abrangencia = ae.id_abrangencia
+        WHERE eo.ano_da_emenda = p_ano_da_emenda AND eo.id_autor = p_id_autor;
+
+    -- Controlador de término do loop
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    -- Primeiro, apagar os registros anteriores do log para reanálise
+    DELETE FROM log_relatorio_emendas;
+
+    -- Abrir o cursor
+    OPEN cur_emendas;
+
+    read_loop: LOOP
+        -- Ler os dados do cursor
+        FETCH cur_emendas INTO v_id_emenda, v_ano_da_emenda, v_nome_autor, v_localidade,
+                             v_valor_empenhado, v_valor_liquidado, v_valor_pago, v_restos_a_pagar;
+
+        -- Verificar se o loop deve terminar
+        IF done = 1 THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Classificação do nível de risco com base na lógica ajustada
+        IF v_valor_pago > v_valor_liquidado THEN
+            SET v_nivel_risco = 'ALTO';
+            SET v_mensagem = CONCAT('Valor pago (', v_valor_pago, ') superior ao valor liquidado (', v_valor_liquidado, '). Verificar possível irregularidade.');
+        ELSEIF v_restos_a_pagar > (v_valor_empenhado * 0.5) THEN
+            SET v_nivel_risco = 'MEDIO';
+            SET v_mensagem = CONCAT('Restos a pagar elevados: ', v_restos_a_pagar, ' (> 50% do valor empenhado).');
+        ELSE
+            SET v_nivel_risco = 'BAIXO';
+            SET v_mensagem = 'Emenda dentro dos parâmetros normais.';
+        END IF;
+
+        -- Inserir o registro no log
+        INSERT INTO log_relatorio_emendas (
+            id_emenda, ano_da_emenda, autor_emenda, localidade, nivel_risco, mensagem
+        )
+        VALUES (
+            v_id_emenda, v_ano_da_emenda, v_nome_autor, v_localidade, v_nivel_risco, v_mensagem
+        );
+    END LOOP;
+
+    -- Fechar o cursor
+    CLOSE cur_emendas;
+END;
+```
+
+## Critérios de Classificação de Risco
+
+A análise considera três níveis de risco baseados em inconsistências nos valores financeiros:
+1. Risco ALTO
+- O valor pago (valor_pago) é maior que o valor liquidado (valor_liquidado).
+- Pode indicar um pagamento irregular antes da liquidação correta.
+- Exemplo de mensagem:
+
+`Valor pago (200,000.00) superior ao valor liquidado (150,000.00). Verificar possível irregularidade.`
+
+2. Risco MÉDIO
+- O valor de restos a pagar (valor_restos_a_pagar_inscritos) ultrapassa 50% do valor empenhado (valor_empenhado).
+- Isso pode indicar que a emenda está demorando para ser executada.
+- Exemplo de mensagem:
+`Restos a pagar elevados: 300,000.00 (> 50% do valor empenhado).`
+
+3. Risco BAIXO
+- Todos os valores estão dentro dos padrões esperados, sem indícios de inconsistência.
+- Exemplo de mensagem:
+`Emenda dentro dos parâmetros normais.`
+
+### Benefícios da Procedure
+
+- Automatização da auditoria: A análise de risco é feita de forma padronizada e automática.
+- Rastreamento de inconsistências: Possíveis problemas financeiros são registrados para futuras investigações.
+- Facilidade de monitoramento: O banco de dados mantém um histórico das análises no log de transparência.
+- Redução de fraudes e erros: Ajuda a detectar pagamentos irregulares e valores inconsistentes.
+
+A execução da procedure é simples e pode ser feita para analisar as emendas de um determinado parlamentar em um ano específico:
+
+`CALL sp_analisar_emendas_transparencia(2023, 101);`
+
+Explicação:
+- 2023 → Ano das emendas que devem ser analisadas.
+- 101 → ID do autor cujas emendas serão auditadas.
+
+Após a execução, a tabela log_relatorio_emendas será atualizada com os resultados da auditoria.
+
+---
+# Exemplos de consultas
+## Consulta 1 - 
+```SQL
+SELECT 
+    eo.ano_da_emenda,
+    SUM(eo.valor_empenhado) AS total_empenhado,
+    SUM(eo.valor_pago) AS total_pago,
+    SUM(eo.valor_empenhado - eo.valor_pago) AS total_nao_pago
+FROM emendas_otimizada eo
+GROUP BY eo.ano_da_emenda
+ORDER BY eo.ano_da_emenda DESC;
+```
+| ano\_da\_emenda | total\_empenhado | total\_pago | total\_nao\_pago |
+| :--- | :--- | :--- | :--- |
+| 2024 | 45599169440.81 | 31471329508.74 | 14127839932.07 |
+| 2023 | 41629677470.73 | 22921183876.05 | 18708493594.68 |
+| 2022 | 25575641587.24 | 17077711874.52 | 8497929712.72 |
+| 2021 | 42613294997.35 | 16770232313.24 | 25843062684.11 |
+| 2020 | 40361933760.50 | 19205037671.13 | 21156896089.37 |
+| 2019 | 14318234969.64 | 6099376135.03 | 8218858834.61 |
+| 2018 | 12467480479.18 | 5807810268.92 | 6659670210.26 |
+| 2017 | 23153005372.45 | 10564854563.34 | 12588150809.11 |
+| 2016 | 30489988421.85 | 19804964808.03 | 10685023613.82 |
+| 2015 | 3516461496.89 | 25864983.41 | 3490596513.48 |
+| 2014 | 6162372099.08 | 140289522.84 | 6022082576.24 |
+
+## Consulta 2 - Valores das Emendas Parlamentares agrupadas por Autor
+```SQL
+SELECT 
+    a.nome_do_autor_da_emenda AS autor,
+    SUM(eo.valor_empenhado) AS total_empenhado,
+    SUM(eo.valor_liquidado) AS total_liquidado,
+    SUM(eo.valor_pago) AS total_pago
+FROM emendas_otimizada eo
+JOIN autor a ON eo.id_autor = a.codigo_do_autor_da_emenda
+GROUP BY a.nome_do_autor_da_emenda
+ORDER BY total_pago DESC
+LIMIT 16;
+```
 
