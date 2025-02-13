@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DdlMappings">
+    <mapping uuid="11919aec-063b-422a-a45f-20c72224c402" name="@localhost Mapping">
+      <data-sources db="4a4d0caa-b5c4-42b3-933e-af2ef50d9abc" ddl="6e96d13d-70ff-4421-99a6-8346f4cb9a18" />
+    </mapping>
+  </component>
+  <component name="SqlDataSourceStorage">
+    <option name="dataSources">
+      <list>
+        <State>
+          <option name="id" value="6e96d13d-70ff-4421-99a6-8346f4cb9a18" />
+          <option name="name" value="@localhost (DDL)" />
+          <option name="dbmsName" value="MYSQL" />
+          <option name="urls">
+            <array>
+              <option value="file://$PROJECT_DIR$/datagrip" />
+            </array>
+          </option>
+          <option name="outLayout" value="File per object by schema.groovy" />
+        </State>
+      </list>
+    </option>
+  </component>
+</project>
