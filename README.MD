@@ -2014,5 +2014,106 @@ Explicação da Consulta
 4.	Ordena os resultados de forma decrescente, priorizando os autores com maior número de emendas.
 
 
+## Consulta 8 - Comparação da Quantidade de Emendas por Parlamentar com a Média Nacional
+```SQL
+WITH EmendasPorAutor AS (
+    -- Calcula a quantidade de emendas por parlamentar, excluindo relator geral e desconhecido
+    SELECT
+        eo.id_autor,
+        a.nome_do_autor_da_emenda AS autor,
+        COUNT(eo.id_emenda) AS total_emendas
+    FROM emendas_otimizada eo
+    JOIN autor a ON eo.id_autor = a.codigo_do_autor_da_emenda
+    WHERE a.nome_do_autor_da_emenda NOT IN ('Relator Geral', 'Autor Desconhecido')
+    GROUP BY eo.id_autor, a.nome_do_autor_da_emenda
+),
+MediaEmendas AS (
+    -- Calcula a média nacional de emendas por parlamentar (sem relator geral/desconhecido)
+    SELECT AVG(total_emendas) AS media_nacional FROM EmendasPorAutor
+)
+-- Finaliza a consulta comparando cada parlamentar com a média nacional
+SELECT
+    epa.autor,
+    epa.total_emendas,
+    me.media_nacional,
+    ROUND((epa.total_emendas / me.media_nacional) * 100, 2) AS indice_percentual
+FROM EmendasPorAutor epa
+CROSS JOIN MediaEmendas me
+ORDER BY indice_percentual DESC
+LIMIT 20;
+;
+```
+| autor | total\_emendas | media\_nacional | indice\_percentual |
+| :--- | :--- | :--- | :--- |
+| JANDIRA FEGHALI | 200 | 41.5863 | 480.93 |
+| GLAUBER BRAGA | 191 | 41.5863 | 459.29 |
+| ALESSANDRO MOLON | 190 | 41.5863 | 456.88 |
+| CARLOS SAMPAIO | 183 | 41.5863 | 440.05 |
+| PEDRO UCZAI | 180 | 41.5863 | 432.83 |
+| IVAN VALENTE | 180 | 41.5863 | 432.83 |
+| PR. MARCO FELICIANO | 177 | 41.5863 | 425.62 |
+| VICENTINHO | 176 | 41.5863 | 423.22 |
+| LUIZA ERUNDINA | 176 | 41.5863 | 423.22 |
+| MARIA DO ROSARIO | 174 | 41.5863 | 418.41 |
+| ERIKA KOKAY | 173 | 41.5863 | 416.00 |
+| PAULO TEIXEIRA | 173 | 41.5863 | 416.00 |
+| BOHN GASS | 169 | 41.5863 | 406.38 |
+| PADRE JOAO | 168 | 41.5863 | 403.98 |
+| TASSO JEREISSATI | 167 | 41.5863 | 401.57 |
+| STEFANO AGUIAR | 166 | 41.5863 | 399.17 |
+| BENEDITA DA SILVA | 163 | 41.5863 | 391.96 |
+| LEONARDO MONTEIRO | 162 | 41.5863 | 389.55 |
+| GONZAGA PATRIOTA | 161 | 41.5863 | 387.15 |
+| HELDER SALOMAO | 161 | 41.5863 | 387.15 |
+
+
+Explicação da Consulta
+1.	Criação da CTE EmendasPorAutor
+- Conta o número de emendas por parlamentar.
+- Exclui os parlamentares “Relator Geral” e “Relator Desconhecido”.
+- Agrupa os dados pelo nome do parlamentar.
+2.	Criação da CTE MediaEmendas
+- Calcula a média nacional de emendas por parlamentar, considerando apenas os autores restantes.
+3.	Consulta Final
+- Retorna o total de emendas de cada parlamentar.
+- Exibe a média nacional de emendas.
+- Calcula um índice percentual, mostrando o quanto cada parlamentar está acima ou abaixo da média nacional.
+- Ordena os parlamentares do maior para o menor índice.
+
+## Motivo do Uso do CROSS JOIN na Consulta 9
+Na Consulta 8, utilizamos um CROSS JOIN para calcular a comparação entre o total de emendas de cada parlamentar e a média nacional. Vamos detalhar por que essa escolha foi feita e como ela funciona na prática.
+
+1. Média Nacional é um único valor, mas precisamos compará-lo com vários parlamentares
+- A subconsulta MediaEmendas retorna apenas um valor: a média nacional do número de emendas por parlamentar.
+- Já a subconsulta EmendasPorAutor retorna uma linha para cada parlamentar.
+- Precisamos que cada linha de EmendasPorAutor tenha acesso ao único valor de MediaEmendas, para podermos calcular o índice percentual.
+- Como não há um campo em comum para conectar os dados diretamente, usamos CROSS JOIN.
+
+2. Alternativas como JOIN não funcionariam diretamente
+- Se tentássemos um INNER JOIN, precisaríamos de uma chave de junção entre EmendasPorAutor e MediaEmendas, mas a média nacional não tem um campo correspondente em EmendasPorAutor.
+- Um LEFT JOIN também exigiria uma condição de junção, que não temos.
+- O CROSS JOIN resolve isso facilmente, replicando a média para todas as linhas da tabela EmendasPorAutor.
+
+# Consultas com álgebra relacional
+## Consulta 1 - Emendas Parlamentares executadas para a área de Educação no ano de 2024
+
+## Consulta - Emendas Parlamentares executadas para a área de Educação no ano de 2024
+
+\[
+\Pi_{\text{codigo_da_emenda}, \text{ano_da_emenda}, \text{nome_funcao}, \text{valor_pago}}
+\left(
+\sigma_{\text{ano_da_emenda} = 2024 \land \text{nome_funcao} = 'Educação'}
+(\text{emendas\_otimizada} \bowtie \text{funcao})
+\right)
+\]
+
+### Explicação da Álgebra Relacional:
+1. **Seleção (`σ`)** → Filtra as emendas parlamentares onde `ano_da_emenda = 2024` e `nome_funcao = 'Educação'`.
+2. **Junção (`⨝`)** → Faz a junção entre `emendas_otimizada` e `funcao` baseada no relacionamento entre `id_funcao` e `codigo_funcao`, para obter o nome da função.
+3. **Projeção (`π`)** → Retorna apenas as colunas relevantes: `codigo_da_emenda`, `ano_da_emenda`, `nome_funcao` e `valor_pago`.
+
+Essa consulta permite identificar todas as emendas parlamentares destinadas à área de Educação no ano de 2024, incluindo os valores pagos.
+
+
 ---
 
