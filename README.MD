@@ -2,6 +2,9 @@
 # Link para apresentação
 https://gamma.app/docs/f5gtdhytqapi7gz?following_id=9zrg5yf1izduq5l&follow_on_start=true
 
+# Link para repositório no github
+https://github.com/lpglinard/ppca_fbd
+
 # Introdução
 A transparência no uso de recursos públicos é fundamental para a boa governança e o controle social.
 No Brasil, as emendas parlamentares são um dos mecanismos pelos quais deputados e senadores destinam recursos do orçamento federal para ações e projetos específicos, abrangendo áreas como saúde, educação e infraestrutura.
@@ -1168,7 +1171,7 @@ Após a execução, a tabela log_relatorio_emendas será atualizada com os resul
 
 ---
 # Exemplos de consultas
-## Consulta 1 - 
+## Consulta 1 - Valor total não pago das emendas parlamentares para cada ano
 ```SQL
 SELECT 
     eo.ano_da_emenda,
@@ -1193,12 +1196,12 @@ ORDER BY eo.ano_da_emenda DESC;
 | 2015 | 3516461496.89 | 25864983.41 | 3490596513.48 |
 | 2014 | 6162372099.08 | 140289522.84 | 6022082576.24 |
 
-Explicação da Consulta
-	- Objetivo: Obter o valor total não pago das emendas parlamentares para cada ano.
-	- Cálculo:
-	- O valor não pago é calculado como a diferença entre o valor empenhado e o valor pago.
-	- Agrupamento: A soma é realizada por ano (ano_da_emenda).
-	- Ordenação: Os resultados são apresentados em ordem decrescente, do ano mais recente para o mais antigo.
+### Explicação da Consulta
+- Objetivo: Obter o valor total não pago das emendas parlamentares para cada ano.
+- Cálculo:
+- O valor não pago é calculado como a diferença entre o valor empenhado e o valor pago.
+- Agrupamento: A soma é realizada por ano (ano_da_emenda).
+- Ordenação: Os resultados são apresentados em ordem decrescente, do ano mais recente para o mais antigo.
 
 ## Consulta 2 - Valores das Emendas Parlamentares agrupadas por Autor
 ```SQL
@@ -1234,15 +1237,15 @@ LIMIT 16;
 | BANCADA DE RONDONIA | 2187925551.10 | 871539724.03 | 842880747.27 |
 
 
-Explicação da Consulta
-	- Objetivo: Exibir os valores empenhados, liquidados e pagos das emendas parlamentares agrupados por autor.
-	- Cálculo:
-	- total_empenhado: Soma dos valores empenhados por cada autor.
-	- total_liquidado: Soma dos valores que foram liquidados (formalizados para pagamento).
-	- total_pago: Soma dos valores efetivamente pagos ao autor.
-	- Agrupamento: Os valores são agrupados por nome_do_autor_da_emenda.
-	- Ordenação: Os resultados são ordenados pelo total_pago, do maior para o menor.
-	- Limitação: Exibe os 16 primeiros registros, conforme solicitado.
+### Explicação da Consulta
+- Objetivo: Exibir os valores empenhados, liquidados e pagos das emendas parlamentares agrupados por autor.
+- Cálculo:
+-  total_empenhado: Soma dos valores empenhados por cada autor.
+-  total_liquidado: Soma dos valores que foram liquidados (formalizados para pagamento).
+-  total_pago: Soma dos valores efetivamente pagos ao autor.
+-  Agrupamento: Os valores são agrupados por nome_do_autor_da_emenda.
+-  Ordenação: Os resultados são ordenados pelo total_pago, do maior para o menor.
+-  Limitação: Exibe os 16 primeiros registros, conforme solicitado.
 
 
 ## Consulta 3 - Áreas de atuação governamental com maior volume de recursos
@@ -1261,7 +1264,7 @@ GROUP BY f.nome_funcao, s.nome_subfuncao
 ORDER BY total_pago DESC
 LIMIT 20;
 ```
-Explicação da Consulta
+### Explicação da Consulta
 - Objetivo: Identificar as áreas de atuação do governo que receberam os maiores volumes de recursos através das emendas parlamentares.
 - Cálculo:
 - total_empenhado: Soma dos valores empenhados por função e subfunção governamental.
@@ -1315,7 +1318,7 @@ ORDER BY total_pago DESC;
 | GO | Goiás | 113433210.98 | 12889509.70 | 7137978.20 |
 
 
-Explicação da Consulta
+### Explicação da Consulta
 - Objetivo: Obter o total de valores empenhados, liquidados e pagos por Unidade da Federação (UF) para as emendas parlamentares de 2024.
 - Filtros:
 - Apenas emendas do ano de 2024 (WHERE eo.ano_da_emenda = 2024).
@@ -1366,7 +1369,7 @@ LIMIT 20;
 | GUARAREMA | SP | 16833601.00 | 16833601.00 | 16833601.00 |
 
 
-Explicação da Consulta
+### Explicação da Consulta
 - Objetivo: Identificar os 20 municípios que receberam maior volume de recursos (pagos) via emendas parlamentares no ano de 2024.
 - Filtros:
 - Considera apenas emendas de 2024 (WHERE eo.ano_da_emenda = 2024).
@@ -1472,7 +1475,7 @@ LIMIT 50;
 | BANCADA DO PARANA | PR | Ciência e Tecnologia | 10000000.00 | 10000000.00 | 1 | Alta Execução | 100.00 |
 | JESSICA SALES | AC | Encargos especiais | 9966248.00 | 9966248.00 | 1 | Alta Execução | 100.00 |
 
-Explicação da Consulta
+### Explicação da Consulta
 
 A consulta utiliza CTEs (Common Table Expressions) para melhorar a legibilidade e modularizar a análise:
 1.	CTE Emendas_Agrupadas
@@ -1532,7 +1535,7 @@ LIMIT 20
 | STEFANO AGUIAR | 166 |
 | BENEDITA DA SILVA | 163 |
 
-Explicação da Consulta
+### Explicação da Consulta
 1.	Seleciona o nome do autor da emenda.
 2.	Conta a quantidade total de emendas realizadas por cada autor.
 3.	Agrupa os resultados pelo nome do autor para consolidar a contagem.
@@ -1592,7 +1595,7 @@ LIMIT 20;
 | HELDER SALOMAO | 161 | 41.5863 | 387.15 |
 
 
-Explicação da Consulta
+### Explicação da Consulta
 1.	Criação da CTE EmendasPorAutor
 - Conta o número de emendas por parlamentar.
 - Exclui os parlamentares “Relator Geral” e “Relator Desconhecido”.
@@ -1605,7 +1608,7 @@ Explicação da Consulta
 - Calcula um índice percentual, mostrando o quanto cada parlamentar está acima ou abaixo da média nacional.
 - Ordena os parlamentares do maior para o menor índice.
 
-## Motivo do Uso do CROSS JOIN na Consulta 9
+### Motivo do Uso do CROSS JOIN na Consulta 9
 Na Consulta 8, utilizamos um CROSS JOIN para calcular a comparação entre o total de emendas de cada parlamentar e a média nacional. Vamos detalhar por que essa escolha foi feita e como ela funciona na prática.
 
 1. Média Nacional é um único valor, mas precisamos compará-lo com vários parlamentares
@@ -1714,4 +1717,3 @@ A partir dessas consultas, foi possível obter informações relevantes e signif
 de manipulação de dados demonstraram ser ferramentas poderosas para sintetizar, de maneira prática e eficiente, 
 respostas a questões relacionadas ao contexto analisado. O estudo reforça a importância da estruturação adequada dos 
 dados e da escolha de técnicas apropriadas para análise e extração de informações em bancos de dados.
-
