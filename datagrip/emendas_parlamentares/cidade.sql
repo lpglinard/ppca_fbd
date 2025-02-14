@@ -6,8 +6,9 @@ create table emendas_parlamentares.cidade
     id_estado   int          null,
     constraint nome_cidade
         unique (nome_cidade, id_estado),
-    constraint cidade_ibfk_1
+    constraint fk_cidade_estado
         foreign key (id_estado) references emendas_parlamentares.estado (id_estado)
+            on update cascade
 );
 
 create index id_estado

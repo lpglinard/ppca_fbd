@@ -20,19 +20,26 @@ create table emendas_parlamentares.emendas_otimizada
     id_tipo_emenda                  int                         null,
     id_autor                        int                         null,
     constraint fk_abrangencia
-        foreign key (id_abrangencia) references emendas_parlamentares.abrangencia_especial (id_abrangencia),
+        foreign key (id_abrangencia) references emendas_parlamentares.abrangencia_especial (id_abrangencia)
+            on update cascade,
     constraint fk_autor_emenda
-        foreign key (id_autor) references emendas_parlamentares.autor (codigo_do_autor_da_emenda),
+        foreign key (id_autor) references emendas_parlamentares.autor (codigo_do_autor_da_emenda)
+            on update cascade,
     constraint fk_cidade
-        foreign key (id_cidade) references emendas_parlamentares.cidade (id_cidade),
+        foreign key (id_cidade) references emendas_parlamentares.cidade (id_cidade)
+            on update cascade,
     constraint fk_estado
-        foreign key (id_estado) references emendas_parlamentares.estado (id_estado),
+        foreign key (id_estado) references emendas_parlamentares.estado (id_estado)
+            on update cascade,
     constraint fk_funcao
-        foreign key (id_funcao) references emendas_parlamentares.funcao (codigo_funcao),
+        foreign key (id_funcao) references emendas_parlamentares.funcao (codigo_funcao)
+            on update cascade,
     constraint fk_regiao
-        foreign key (id_regiao) references emendas_parlamentares.regiao (id_regiao),
+        foreign key (id_regiao) references emendas_parlamentares.regiao (id_regiao)
+            on update cascade,
     constraint fk_subfuncao
-        foreign key (id_subfuncao) references emendas_parlamentares.subfuncao (codigo_subfuncao),
+        foreign key (id_subfuncao) references emendas_parlamentares.subfuncao (codigo_subfuncao)
+            on update cascade,
     constraint fk_tipo_emenda
         foreign key (id_tipo_emenda) references emendas_parlamentares.tipo_emenda (id_tipo_emenda)
 );
