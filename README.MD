@@ -288,8 +288,380 @@ mantendo a transparência e rastreabilidade das informações.
 ---
 
 # DDL 
-Aqui apresentamos o DDL resultante da criação do banco, extraído da ferramenta MySQLWorkbench com dump.
+Aqui apresentamos os arquivos de DDL resultantes da criação do banco, extraído da ferramenta Datagrip.
+* [abrangencia_especial.sql](datagrip/emendas_parlamentares/abrangencia_especial.sql)
+* [autor.sql](datagrip/emendas_parlamentares/autor.sql)
+* [cidade.sql](datagrip/emendas_parlamentares/cidade.sql)
+* [emendas_orignal.sql](datagrip/emendas_parlamentares/emendas_orignal.sql)
+* [emendas_otimizada.sql](datagrip/emendas_parlamentares/emendas_otimizada.sql)
+* [estado.sql](datagrip/emendas_parlamentares/estado.sql)
+* [funcao.sql](datagrip/emendas_parlamentares/funcao.sql)
+* [log_emendas.sql](datagrip/emendas_parlamentares/log_emendas.sql)
+* [log_relatorio_emendas.sql](datagrip/emendas_parlamentares/log_relatorio_emendas.sql)
+* [regiao.sql](datagrip/emendas_parlamentares/regiao.sql)
+* [sp_analisar_emendas_transparencia.sql](datagrip/emendas_parlamentares/sp_analisar_emendas_transparencia.sql)
+* [subfuncao.sql](datagrip/emendas_parlamentares/subfuncao.sql)
+* [tipo_emenda.sql](datagrip/emendas_parlamentares/tipo_emenda.sql)
+* [trg_auditoria_emendas_delete.sql](datagrip/emendas_parlamentares/trg_auditoria_emendas_delete.sql)
+* [trg_auditoria_emendas_insert.sql](datagrip/emendas_parlamentares/trg_auditoria_emendas_insert.sql)
+* [trg_auditoria_emendas_update.sql](datagrip/emendas_parlamentares/trg_auditoria_emendas_update.sql)
+* [trg_valida_localidade_emenda.sql](datagrip/emendas_parlamentares/trg_valida_localidade_emenda.sql)
+* [trg_valida_localidade_emenda_update.sql](datagrip/emendas_parlamentares/trg_valida_localidade_emenda_update.sql)
+* [vw_localidade_emenda.sql](datagrip/emendas_parlamentares/vw_localidade_emenda.sql)
 
+## DDL compilado para criação da versão final do BD.
+```SQL
+create table abrangencia_especial
+(
+    id_abrangencia   int auto_increment
+        primary key,
+    nome_abrangencia varchar(100) not null,
+    constraint nome_abrangencia
+        unique (nome_abrangencia)
+);
+
+create table autor
+(
+    nome_do_autor_da_emenda   varchar(255) null,
+    codigo_do_autor_da_emenda int          not null
+        primary key
+);
+
+create table emendas_orignal
+(
+    codigo_da_emenda                text null,
+    ano_da_emenda                   int  null,
+    tipo_de_emenda                  text null,
+    codigo_do_autor_da_emenda       text null,
+    nome_do_autor_da_emenda         text null,
+    numero_da_emenda                text null,
+    localidade_do_gasto             text null,
+    codigo_funcao                   text null,
+    nome_funcao                     text null,
+    codigo_subfuncao                text null,
+    nome_subfuncao                  text null,
+    valor_empenhado                 text null,
+    valor_liquidado                 text null,
+    valor_pago                      text null,
+    valor_restos_a_pagar_inscritos  text null,
+    valor_restos_a_pagar_cancelados text null,
+    valor_restos_a_pagar_pagos      text null
+);
+
+create table funcao
+(
+    codigo_funcao varchar(50)  not null
+        primary key,
+    nome_funcao   varchar(255) null
+);
+
+create table log_emendas
+(
+    id_log              int auto_increment
+        primary key,
+    id_emenda           int                                 not null,
+    tipo_operacao       enum ('INSERT', 'UPDATE', 'DELETE') not null,
+    usuario_responsavel varchar(100)                        not null,
+    data_operacao       timestamp default CURRENT_TIMESTAMP null,
+    dados_anteriores    text                                null,
+    dados_novos         text                                null
+);
+
+create table log_relatorio_emendas
+(
+    id_log        int auto_increment
+        primary key,
+    id_emenda     int                                 not null,
+    ano_da_emenda int                                 null,
+    autor_emenda  varchar(255)                        null,
+    localidade    varchar(255)                        null,
+    nivel_risco   enum ('BAIXO', 'MEDIO', 'ALTO')     not null,
+    mensagem      text                                null,
+    data_analise  timestamp default CURRENT_TIMESTAMP null
+);
+
+create table regiao
+(
+    id_regiao   int auto_increment
+        primary key,
+    nome_regiao varchar(100) not null,
+    constraint nome_regiao
+        unique (nome_regiao)
+);
+
+create table estado
+(
+    id_estado   int auto_increment
+        primary key,
+    sigla_uf    varchar(2)   not null,
+    nome_estado varchar(100) not null,
+    id_regiao   int          not null,
+    constraint sigla_uf
+        unique (sigla_uf),
+    constraint fk_estado_regiao
+        foreign key (id_regiao) references regiao (id_regiao)
+            on update cascade
+);
+
+create table cidade
+(
+    id_cidade   int auto_increment
+        primary key,
+    nome_cidade varchar(255) not null,
+    id_estado   int          null,
+    constraint nome_cidade
+        unique (nome_cidade, id_estado),
+    constraint fk_cidade_estado
+        foreign key (id_estado) references estado (id_estado)
+            on update cascade
+);
+
+create index id_estado
+    on cidade (id_estado);
+
+create table subfuncao
+(
+    codigo_subfuncao varchar(50)  not null
+        primary key,
+    nome_subfuncao   varchar(255) null
+);
+
+create table tipo_emenda
+(
+    id_tipo_emenda   int auto_increment
+        primary key,
+    nome_tipo_emenda varchar(100) not null,
+    constraint nome_tipo_emenda
+        unique (nome_tipo_emenda)
+);
+
+create table emendas_otimizada
+(
+    id_emenda                       int auto_increment
+        primary key,
+    codigo_da_emenda                varchar(255)                null,
+    ano_da_emenda                   int                         not null,
+    numero_da_emenda                varchar(50)                 null,
+    id_funcao                       varchar(50)                 not null,
+    id_subfuncao                    varchar(50)                 not null,
+    valor_empenhado                 decimal(15, 2) default 0.00 null,
+    valor_liquidado                 decimal(15, 2) default 0.00 null,
+    valor_pago                      decimal(15, 2) default 0.00 null,
+    valor_restos_a_pagar_inscritos  decimal(15, 2) default 0.00 null,
+    valor_restos_a_pagar_cancelados decimal(15, 2) default 0.00 null,
+    valor_restos_a_pagar_pagos      decimal(15, 2) default 0.00 null,
+    id_cidade                       int                         null,
+    id_estado                       int                         null,
+    id_regiao                       int                         null,
+    id_abrangencia                  int                         null,
+    id_tipo_emenda                  int                         null,
+    id_autor                        int                         null,
+    constraint fk_abrangencia
+        foreign key (id_abrangencia) references abrangencia_especial (id_abrangencia)
+            on update cascade,
+    constraint fk_autor_emenda
+        foreign key (id_autor) references autor (codigo_do_autor_da_emenda)
+            on update cascade,
+    constraint fk_cidade
+        foreign key (id_cidade) references cidade (id_cidade)
+            on update cascade,
+    constraint fk_estado
+        foreign key (id_estado) references estado (id_estado)
+            on update cascade,
+    constraint fk_funcao
+        foreign key (id_funcao) references funcao (codigo_funcao)
+            on update cascade,
+    constraint fk_regiao
+        foreign key (id_regiao) references regiao (id_regiao)
+            on update cascade,
+    constraint fk_subfuncao
+        foreign key (id_subfuncao) references subfuncao (codigo_subfuncao)
+            on update cascade,
+    constraint fk_tipo_emenda
+        foreign key (id_tipo_emenda) references tipo_emenda (id_tipo_emenda)
+);
+
+create definer = root@localhost trigger trg_auditoria_emendas_delete
+    after delete
+    on emendas_otimizada
+    for each row
+BEGIN
+    INSERT INTO log_emendas (id_emenda, tipo_operacao, usuario_responsavel, dados_anteriores)
+    VALUES (
+        OLD.id_emenda,
+        'DELETE',
+        USER(),
+        CONCAT('codigo_da_emenda: ', OLD.codigo_da_emenda, ', ano_da_emenda: ', OLD.ano_da_emenda,
+               ', numero_da_emenda: ', OLD.numero_da_emenda, ', valor_empenhado: ', OLD.valor_empenhado,
+               ', valor_pago: ', OLD.valor_pago)
+    );
+END;
+
+create definer = root@localhost trigger trg_auditoria_emendas_insert
+    after insert
+    on emendas_otimizada
+    for each row
+BEGIN
+    INSERT INTO log_emendas (id_emenda, tipo_operacao, usuario_responsavel, dados_novos)
+    VALUES (
+        NEW.id_emenda,
+        'INSERT',
+        USER(),
+        CONCAT('codigo_da_emenda: ', NEW.codigo_da_emenda, ', ano_da_emenda: ', NEW.ano_da_emenda,
+               ', numero_da_emenda: ', NEW.numero_da_emenda, ', valor_empenhado: ', NEW.valor_empenhado,
+               ', valor_pago: ', NEW.valor_pago)
+    );
+END;
+
+create definer = root@localhost trigger trg_auditoria_emendas_update
+    after update
+    on emendas_otimizada
+    for each row
+BEGIN
+    INSERT INTO log_emendas (id_emenda, tipo_operacao, usuario_responsavel, dados_anteriores, dados_novos)
+    VALUES (
+        OLD.id_emenda,
+        'UPDATE',
+        USER(),
+        CONCAT('codigo_da_emenda: ', OLD.codigo_da_emenda, ', ano_da_emenda: ', OLD.ano_da_emenda,
+               ', numero_da_emenda: ', OLD.numero_da_emenda, ', valor_empenhado: ', OLD.valor_empenhado,
+               ', valor_pago: ', OLD.valor_pago),
+        CONCAT('codigo_da_emenda: ', NEW.codigo_da_emenda, ', ano_da_emenda: ', NEW.ano_da_emenda,
+               ', numero_da_emenda: ', NEW.numero_da_emenda, ', valor_empenhado: ', NEW.valor_empenhado,
+               ', valor_pago: ', NEW.valor_pago)
+    );
+END;
+
+create definer = root@localhost trigger trg_valida_localidade_emenda
+    before insert
+    on emendas_otimizada
+    for each row
+BEGIN
+    IF NEW.id_cidade IS NULL
+       AND NEW.id_estado IS NULL
+       AND NEW.id_regiao IS NULL
+       AND NEW.id_abrangencia IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: A emenda deve ter pelo menos uma localidade definida (cidade, estado, região ou abrangência especial).';
+    END IF;
+END;
+
+create definer = root@localhost trigger trg_valida_localidade_emenda_update
+    before update
+    on emendas_otimizada
+    for each row
+BEGIN
+    IF NEW.id_cidade IS NULL
+       AND NEW.id_estado IS NULL
+       AND NEW.id_regiao IS NULL
+       AND NEW.id_abrangencia IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: A emenda deve ter pelo menos uma localidade definida (cidade, estado, região ou abrangência especial).';
+    END IF;
+END;
+
+create definer = root@localhost view vw_localidade_emenda as
+select `eo`.`id_emenda`                       AS `id_emenda`,
+       (case
+            when (`eo`.`id_cidade` is not null) then concat(`c`.`nome_cidade`, ' - ',
+                                                            coalesce(`est`.`sigla_uf`, 'UF Desconhecida'))
+            when (`eo`.`id_estado` is not null) then `est`.`nome_estado`
+            when (`eo`.`id_regiao` is not null) then `r`.`nome_regiao`
+            when (`eo`.`id_abrangencia` is not null) then `ae`.`nome_abrangencia`
+            else 'Localidade indefinida' end) AS `localidade`,
+       `eo`.`ano_da_emenda`                   AS `ano_da_emenda`,
+       `f`.`nome_funcao`                      AS `nome_funcao`,
+       `s`.`nome_subfuncao`                   AS `nome_subfuncao`,
+       coalesce(`eo`.`valor_empenhado`, 0.00) AS `valor_empenhado`,
+       coalesce(`eo`.`valor_pago`, 0.00)      AS `valor_pago`
+from ((((((`emendas_parlamentares`.`emendas_otimizada` `eo` left join `emendas_parlamentares`.`cidade` `c`
+           on ((`eo`.`id_cidade` = `c`.`id_cidade`))) left join `emendas_parlamentares`.`estado` `est`
+          on ((`c`.`id_estado` = `est`.`id_estado`))) left join `emendas_parlamentares`.`regiao` `r`
+         on ((`eo`.`id_regiao` = `r`.`id_regiao`))) left join `emendas_parlamentares`.`abrangencia_especial` `ae`
+        on ((`eo`.`id_abrangencia` = `ae`.`id_abrangencia`))) left join `emendas_parlamentares`.`funcao` `f`
+       on ((`eo`.`id_funcao` = `f`.`codigo_funcao`))) left join `emendas_parlamentares`.`subfuncao` `s`
+      on ((`eo`.`id_subfuncao` = `s`.`codigo_subfuncao`)));
+
+create
+    definer = root@localhost procedure sp_analisar_emendas_transparencia(IN p_ano_da_emenda int, IN p_id_autor int)
+BEGIN
+    -- Declaração de variáveis
+    DECLARE v_id_emenda INT;
+    DECLARE v_ano_da_emenda INT;
+    DECLARE v_nome_autor VARCHAR(255);
+    DECLARE v_localidade VARCHAR(255);
+    DECLARE v_valor_empenhado DECIMAL(15, 2);
+    DECLARE v_valor_liquidado DECIMAL(15, 2);
+    DECLARE v_valor_pago DECIMAL(15, 2);
+    DECLARE v_restos_a_pagar DECIMAL(15, 2);
+    DECLARE v_nivel_risco ENUM('BAIXO', 'MEDIO', 'ALTO');
+    DECLARE v_mensagem TEXT;
+    DECLARE done INT DEFAULT 0;
+
+    -- Cursor para iterar as emendas
+    DECLARE cur_emendas CURSOR FOR
+        SELECT eo.id_emenda, eo.ano_da_emenda, a.nome_do_autor_da_emenda,
+               CASE
+                   WHEN eo.id_cidade IS NOT NULL THEN CONCAT(c.nome_cidade, ' - ', est.sigla_uf)
+                   WHEN eo.id_estado IS NOT NULL THEN est.nome_estado
+                   WHEN eo.id_regiao IS NOT NULL THEN r.nome_regiao
+                   WHEN eo.id_abrangencia IS NOT NULL THEN ae.nome_abrangencia
+                   ELSE 'Localidade indefinida'
+               END AS localidade,
+               eo.valor_empenhado, eo.valor_liquidado, eo.valor_pago, eo.valor_restos_a_pagar_inscritos
+        FROM emendas_otimizada eo
+        LEFT JOIN autor a ON eo.id_autor = a.codigo_do_autor_da_emenda
+        LEFT JOIN cidade c ON eo.id_cidade = c.id_cidade
+        LEFT JOIN estado est ON c.id_estado = est.id_estado
+        LEFT JOIN regiao r ON eo.id_regiao = r.id_regiao
+        LEFT JOIN abrangencia_especial ae ON eo.id_abrangencia = ae.id_abrangencia
+        WHERE eo.ano_da_emenda = p_ano_da_emenda AND eo.id_autor = p_id_autor;
+
+    -- Controlador de término do loop
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    -- Primeiro, apagar os registros anteriores do log
+    DELETE FROM log_relatorio_emendas;
+
+    -- Abrir o cursor
+    OPEN cur_emendas;
+
+    read_loop: LOOP
+        -- Ler os dados do cursor
+        FETCH cur_emendas INTO v_id_emenda, v_ano_da_emenda, v_nome_autor, v_localidade,
+                             v_valor_empenhado, v_valor_liquidado, v_valor_pago, v_restos_a_pagar;
+
+        -- Verificar se o loop deve terminar
+        IF done = 1 THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Classificação do nível de risco com base na lógica ajustada
+        IF v_valor_pago > v_valor_liquidado THEN
+            SET v_nivel_risco = 'ALTO';
+            SET v_mensagem = CONCAT('Valor pago (', v_valor_pago, ') superior ao valor liquidado (', v_valor_liquidado, '). Verificar possível irregularidade.');
+        ELSEIF v_restos_a_pagar > (v_valor_empenhado * 0.5) THEN
+            SET v_nivel_risco = 'MEDIO';
+            SET v_mensagem = CONCAT('Restos a pagar elevados: ', v_restos_a_pagar, ' (> 50% do valor empenhado).');
+        ELSE
+            SET v_nivel_risco = 'BAIXO';
+            SET v_mensagem = 'Emenda dentro dos parâmetros normais.';
+        END IF;
+
+        -- Inserir o registro no log
+        INSERT INTO log_relatorio_emendas (
+            id_emenda, ano_da_emenda, autor_emenda, localidade, nivel_risco, mensagem
+        )
+        VALUES (
+            v_id_emenda, v_ano_da_emenda, v_nome_autor, v_localidade, v_nivel_risco, v_mensagem
+        );
+    END LOOP;
+
+    -- Fechar o cursor
+    CLOSE cur_emendas;
+END;
+
+```
 
 # Processo de ETL (Extract, Transform, Load)
 
