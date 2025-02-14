@@ -1,3 +1,6 @@
+# Modelagem de Banco de Dados para Emendas Parlamentares
+## Uma análise da transparência no uso de recursos públicos
+### Lucas Linard e Marco Antonio Cavalcante
 
 # Link para apresentação
 https://gamma.app/docs/f5gtdhytqapi7gz?following_id=9zrg5yf1izduq5l&follow_on_start=true
@@ -23,10 +26,10 @@ garantir a integridade das informações.
 
 # Modelo de dados Relacional.
 A modelagem foi baseada nos princípios de normalização para evitar redundâncias e inconsistências, e as tabelas foram 
-projetadas de forma a representar as entidades e relacionamentos presentes nos dados disponibilizados pelo Portal da 
+projetadas para representar as entidades e relacionamentos presentes nos dados disponibilizados pelo Portal da 
 Transparência do Governo Federal.
 
-## Estrutura Geral do Modelo
+## Estrutura do Modelo
 O modelo é composto por diversas tabelas, organizadas em diferentes categorias:
 - Tabelas principais: Contêm os dados essenciais sobre as emendas parlamentares.
 - Tabelas auxiliares: Normalizam informações como autores das emendas, funções orçamentárias e localidades.
@@ -103,7 +106,7 @@ CREATE TABLE IF NOT EXISTS cidade (
     CONSTRAINT fk_cidade_estado FOREIGN KEY (id_estado) REFERENCES estado (id_estado) ON UPDATE CASCADE
 );
 ```
-A hierarquia **Região -> Estado -> Cidade** permite consultas flexíveis por diferentes níveis de abrangência territorial.
+A hierarquia **Região → Estado → Cidade** permite consultas flexíveis por diferentes níveis de abrangência territorial.
 
 ### Tabela `log_emendas` (Auditoria de Alterações)
 Armazena um histórico de todas as operações realizadas na tabela `emendas_otimizada`.
@@ -130,7 +133,7 @@ e que consultas possam ser realizadas com eficiência.
 Além disso, foram incluídas cláusulas `CASCADE` em algumas chaves estrangeiras para manter a integridade referencial e  
 atualizar automaticamente os registros associados quando há alterações nas tabelas relacionadas.
 
-A seguir, detalhamos todos os relacionamentos da tabela `emendas_otimizada` com suas respectivas tabelas auxiliares.
+A seguir, detalhamos todos os relacionamentos da tabela `emendas_otimizada` com as suas respetivas tabelas auxiliares.
 
 ---
 
@@ -138,7 +141,7 @@ A seguir, detalhamos todos os relacionamentos da tabela `emendas_otimizada` com 
 - **Objetivo**: Identificar o parlamentar responsável pela emenda.
 - **Chave estrangeira**: `id_autor`
 - **Relacionamento**: Uma emenda pertence a um único autor, mas um autor pode ter múltiplas emendas.
-- **Integridade referencial**: Caso um `autor` tenha seu código atualizado, a alteração será propagada automaticamente.
+- **Integridade referencial**: Caso um `autor` tenha o seu código atualizado, a alteração será propagada automaticamente.
 
 ```SQL
 CONSTRAINT fk_autor_emenda 
@@ -194,7 +197,7 @@ ON UPDATE CASCADE
 - **Objetivo**: Permitir a análise das emendas por região geográfica.
 - **Chave estrangeira**: `id_regiao`
 - **Relacionamento**: Cada emenda pode ser vinculada a uma região, e uma região pode conter diversas emendas.
-- **Integridade referencial**: Atualizações no ID da região serão automaticamente refletidas.
+- **Integridade referencial**: Atualizações no ‘ID’ da região serão automaticamente refletidas.
 
 ```SQL
 CONSTRAINT fk_regiao 
@@ -976,11 +979,11 @@ BEGIN
     END IF;
 END;
 ```
-1. Trigger trg_valida_localidade_emenda (INSERT)
-- Antes de uma nova emenda ser inserida, ele verifica se todas as colunas de localidade (id_cidade, id_estado, id_regiao, id_abrangencia) estão nulas.
-- Se todas estiverem nulas, um erro é lançado e a inserção é cancelada.
+1. ‘Trigger’ trg_valida_localidade_emenda (INSERT)
+   - Antes de uma nova emenda ser inserida, ele verifica se todas as colunas de localidade (id_cidade, id_estado, id_regiao, id_abrangencia) estão nulas.
+   - Se todas estiverem nulas, um erro é lançado e a inserção é cancelada.
 
-2. Trigger trg_valida_localidade_emenda_update (UPDATE)
+2. ‘Trigger’ trg_valida_localidade_emenda_update (UPDATE)
 - Antes de uma emenda ser atualizada, ele executa a mesma validação.
 - Se a atualização remover todas as informações de localidade, um erro é lançado e a atualização é rejeitada.
 
@@ -1049,7 +1052,7 @@ Essa hierarquia garante que sempre haja um campo descritivo da localidade da eme
 
 # **Procedimento Armazenado para Análise de Emendas**
 A procedure sp_analisar_emendas_transparencia tem o objetivo de avaliar a transparência das emendas parlamentares, 
-classificando cada emenda de acordo com o nível de risco financeiro e registrando as análises em um log específico.
+classificando cada emenda conforme o nível de risco financeiro e registrando as análises em um log específico.
 
 ```SQL
 CREATE PROCEDURE sp_analisar_emendas_transparencia(IN p_ano_da_emenda INT, IN p_id_autor INT)
@@ -1135,22 +1138,18 @@ END;
 
 A análise considera três níveis de risco baseados em inconsistências nos valores financeiros:
 1. Risco ALTO
-- O valor pago (valor_pago) é maior que o valor liquidado (valor_liquidado).
-- Pode indicar um pagamento irregular antes da liquidação correta.
-- Exemplo de mensagem:
-
-`Valor pago (200,000.00) superior ao valor liquidado (150,000.00). Verificar possível irregularidade.`
+   - O valor pago (valor_pago) é maior que o valor liquidado (valor_liquidado).
+   - Pode indicar um pagamento irregular antes da liquidação correta.
+   - Exemplo de mensagem: `Valor pago (200,000.00) superior ao valor liquidado (150,000.00). Verificar possível irregularidade.`
 
 2. Risco MÉDIO
-- O valor de restos a pagar (valor_restos_a_pagar_inscritos) ultrapassa 50% do valor empenhado (valor_empenhado).
-- Isso pode indicar que a emenda está demorando para ser executada.
-- Exemplo de mensagem:
-`Restos a pagar elevados: 300,000.00 (> 50% do valor empenhado).`
+   - O valor de restos a pagar (valor_restos_a_pagar_inscritos) ultrapassa 50% do valor empenhado (valor_empenhado).
+   - Isso pode indicar que a emenda está a demorar para ser executada.
+   - Exemplo de mensagem: `Restos a pagar elevados: 300,000.00 (> 50% do valor empenhado).`
 
 3. Risco BAIXO
-- Todos os valores estão dentro dos padrões esperados, sem indícios de inconsistência.
-- Exemplo de mensagem:
-`Emenda dentro dos parâmetros normais.`
+   - Todos os valores estão dentro dos padrões esperados, sem indícios de inconsistência.
+   - Exemplo de mensagem: `Emenda dentro dos parâmetros normais.`
 
 ### Benefícios da Procedure
 
@@ -1182,19 +1181,19 @@ FROM emendas_otimizada eo
 GROUP BY eo.ano_da_emenda
 ORDER BY eo.ano_da_emenda DESC;
 ```
-| ano\_da\_emenda | total\_empenhado | total\_pago | total\_nao\_pago |
-| :--- | :--- | :--- | :--- |
-| 2024 | 45599169440.81 | 31471329508.74 | 14127839932.07 |
-| 2023 | 41629677470.73 | 22921183876.05 | 18708493594.68 |
-| 2022 | 25575641587.24 | 17077711874.52 | 8497929712.72 |
-| 2021 | 42613294997.35 | 16770232313.24 | 25843062684.11 |
-| 2020 | 40361933760.50 | 19205037671.13 | 21156896089.37 |
-| 2019 | 14318234969.64 | 6099376135.03 | 8218858834.61 |
-| 2018 | 12467480479.18 | 5807810268.92 | 6659670210.26 |
-| 2017 | 23153005372.45 | 10564854563.34 | 12588150809.11 |
-| 2016 | 30489988421.85 | 19804964808.03 | 10685023613.82 |
-| 2015 | 3516461496.89 | 25864983.41 | 3490596513.48 |
-| 2014 | 6162372099.08 | 140289522.84 | 6022082576.24 |
+| ano\_da\_emenda | total\_empenhado | total\_pago    | total\_nao\_pago |
+|:----------------|:-----------------|:---------------|:-----------------|
+| 2024            | 45599169440.81   | 31471329508.74 | 14127839932.07   |
+| 2023            | 41629677470.73   | 22921183876.05 | 18708493594.68   |
+| 2022            | 25575641587.24   | 17077711874.52 | 8497929712.72    |
+| 2021            | 42613294997.35   | 16770232313.24 | 25843062684.11   |
+| 2020            | 40361933760.50   | 19205037671.13 | 21156896089.37   |
+| 2019            | 14318234969.64   | 6099376135.03  | 8218858834.61    |
+| 2018            | 12467480479.18   | 5807810268.92  | 6659670210.26    |
+| 2017            | 23153005372.45   | 10564854563.34 | 12588150809.11   |
+| 2016            | 30489988421.85   | 19804964808.03 | 10685023613.82   |
+| 2015            | 3516461496.89    | 25864983.41    | 3490596513.48    |
+| 2014            | 6162372099.08    | 140289522.84   | 6022082576.24    |
 
 ### Explicação da Consulta
 - Objetivo: Obter o valor total não pago das emendas parlamentares para cada ano.
@@ -1217,24 +1216,24 @@ ORDER BY total_pago DESC
 LIMIT 16;
 ```
 
-| autor | total\_empenhado | total\_liquidado | total\_pago |
-| :--- | :--- | :--- | :--- |
-| Autor Desconhecido | 40830898740.07 | 25510952132.21 | 25396901070.30 |
-| RELATOR GERAL | 58342641087.55 | 25896505316.81 | 25328708980.11 |
-| COM. DA SAUDE | 5813745164.56 | 5533105803.00 | 5533105803.00 |
-| BANCADA DO CEARA | 1751249020.99 | 1500205747.34 | 1497841584.47 |
-| BANCADA DO PIAUI | 1736340391.15 | 1376741284.96 | 1376642841.45 |
-| BANCADA DO MARANHAO | 1731737666.71 | 1226426561.11 | 1207956033.59 |
-| BANCADA DO PARA | 1891740837.34 | 1170166458.52 | 1157917806.30 |
-| COM. ASSUNTOS SOCIAIS | 1201116188.30 | 1149277698.67 | 1149277698.67 |
-| BANCADA DE SANTA CATARINA | 1853852859.69 | 1103758551.72 | 1102572470.75 |
-| BANCADA DO AMAZONAS | 1918237518.24 | 1084002916.94 | 1080439443.83 |
-| BANCADA DE SAO PAULO | 1716782597.48 | 1064116377.01 | 1059816895.27 |
-| BANCADA DO RIO DE JANEIRO | 2036128253.02 | 947127183.57 | 926705362.06 |
-| BANCADA DE ALAGOAS | 1675439412.81 | 913773900.71 | 901241831.16 |
-| BANCADA DE MINAS GERAIS | 1730898560.84 | 905143113.37 | 897967482.40 |
-| BANCADA DO RIO GRANDE DO NORTE | 2300097884.72 | 922272496.68 | 893779200.72 |
-| BANCADA DE RONDONIA | 2187925551.10 | 871539724.03 | 842880747.27 |
+| autor                          | total\_empenhado | total\_liquidado | total\_pago    |
+|:-------------------------------|:-----------------|:-----------------|:---------------|
+| Autor Desconhecido             | 40830898740.07   | 25510952132.21   | 25396901070.30 |
+| RELATOR GERAL                  | 58342641087.55   | 25896505316.81   | 25328708980.11 |
+| COM. DA SAUDE                  | 5813745164.56    | 5533105803.00    | 5533105803.00  |
+| BANCADA DO CEARA               | 1751249020.99    | 1500205747.34    | 1497841584.47  |
+| BANCADA DO PIAUI               | 1736340391.15    | 1376741284.96    | 1376642841.45  |
+| BANCADA DO MARANHAO            | 1731737666.71    | 1226426561.11    | 1207956033.59  |
+| BANCADA DO PARA                | 1891740837.34    | 1170166458.52    | 1157917806.30  |
+| COM. ASSUNTOS SOCIAIS          | 1201116188.30    | 1149277698.67    | 1149277698.67  |
+| BANCADA DE SANTA CATARINA      | 1853852859.69    | 1103758551.72    | 1102572470.75  |
+| BANCADA DO AMAZONAS            | 1918237518.24    | 1084002916.94    | 1080439443.83  |
+| BANCADA DE SAO PAULO           | 1716782597.48    | 1064116377.01    | 1059816895.27  |
+| BANCADA DO RIO DE JANEIRO      | 2036128253.02    | 947127183.57     | 926705362.06   |
+| BANCADA DE ALAGOAS             | 1675439412.81    | 913773900.71     | 901241831.16   |
+| BANCADA DE MINAS GERAIS        | 1730898560.84    | 905143113.37     | 897967482.40   |
+| BANCADA DO RIO GRANDE DO NORTE | 2300097884.72    | 922272496.68     | 893779200.72   |
+| BANCADA DE RONDONIA            | 2187925551.10    | 871539724.03     | 842880747.27   |
 
 
 ### Explicação da Consulta
@@ -1287,35 +1286,35 @@ WHERE eo.ano_da_emenda = 2024
 GROUP BY e.sigla_uf, e.nome_estado
 ORDER BY total_pago DESC;
 ```
-| unidade\_federativa | estado | total\_empenhado | total\_liquidado | total\_pago |
-| :--- | :--- | :--- | :--- | :--- |
-| SP | São Paulo | 930430515.39 | 438719419.75 | 433206584.03 |
-| DF | Distrito Federal | 598253535.23 | 240147807.44 | 235140053.63 |
-| BA | Bahia | 489229457.56 | 214896677.72 | 204937278.51 |
-| MS | Mato Grosso do Sul | 300591848.55 | 199004065.34 | 197860526.11 |
-| AP | Amapá | 407638542.53 | 136560619.89 | 136495568.84 |
-| MT | Mato Grosso | 282931080.15 | 137564425.64 | 133252356.11 |
-| AC | Acre | 394209366.24 | 120343252.13 | 115430326.36 |
-| PR | Paraná | 260402227.60 | 90897302.54 | 90722578.26 |
-| AM | Amazonas | 140025576.32 | 85803271.29 | 84798380.93 |
-| RJ | Rio de Janeiro | 744013253.05 | 100043735.14 | 80805095.60 |
-| CE | Ceará | 117164198.85 | 69476028.36 | 70118491.55 |
-| SE | Sergipe | 172365641.24 | 70110439.45 | 69565182.88 |
-| AL | Alagoas | 157660480.66 | 70621975.80 | 69208156.80 |
-| MA | Maranhão | 118161632.22 | 67920023.54 | 67173339.36 |
-| PB | Paraíba | 165568875.66 | 63040832.74 | 61547806.66 |
-| RS | Rio Grande do Sul | 195646541.52 | 60509028.73 | 59648031.64 |
-| RO | Rondônia | 121337323.24 | 60745521.48 | 59377590.45 |
-| ES | Espírito Santo | 259673559.26 | 62441931.20 | 55547718.89 |
-| PA | Pará | 123783086.22 | 53595939.95 | 52766905.14 |
-| PE | Pernambuco | 260855475.26 | 53979573.40 | 51010436.53 |
-| MG | Minas Gerais | 231421284.04 | 48715054.81 | 44331249.32 |
-| RR | Roraima | 156017365.56 | 43524749.37 | 42511784.01 |
-| RN | Rio Grande do Norte | 113235218.46 | 41552001.75 | 39058333.52 |
-| SC | Santa Catarina | 119020464.61 | 38709458.42 | 38671148.32 |
-| TO | Tocantins | 167345844.25 | 35389461.52 | 35034669.05 |
-| PI | Piauí | 51875714.98 | 28135115.66 | 27751418.10 |
-| GO | Goiás | 113433210.98 | 12889509.70 | 7137978.20 |
+| unidade\_federativa | estado              | total\_empenhado | total\_liquidado | total\_pago  |
+|:--------------------|:--------------------|:-----------------|:-----------------|:-------------|
+| SP                  | São Paulo           | 930430515.39     | 438719419.75     | 433206584.03 |
+| DF                  | Distrito Federal    | 598253535.23     | 240147807.44     | 235140053.63 |
+| BA                  | Bahia               | 489229457.56     | 214896677.72     | 204937278.51 |
+| MS                  | Mato Grosso do Sul  | 300591848.55     | 199004065.34     | 197860526.11 |
+| AP                  | Amapá               | 407638542.53     | 136560619.89     | 136495568.84 |
+| MT                  | Mato Grosso         | 282931080.15     | 137564425.64     | 133252356.11 |
+| AC                  | Acre                | 394209366.24     | 120343252.13     | 115430326.36 |
+| PR                  | Paraná              | 260402227.60     | 90897302.54      | 90722578.26  |
+| AM                  | Amazonas            | 140025576.32     | 85803271.29      | 84798380.93  |
+| RJ                  | Rio de Janeiro      | 744013253.05     | 100043735.14     | 80805095.60  |
+| CE                  | Ceará               | 117164198.85     | 69476028.36      | 70118491.55  |
+| SE                  | Sergipe             | 172365641.24     | 70110439.45      | 69565182.88  |
+| AL                  | Alagoas             | 157660480.66     | 70621975.80      | 69208156.80  |
+| MA                  | Maranhão            | 118161632.22     | 67920023.54      | 67173339.36  |
+| PB                  | Paraíba             | 165568875.66     | 63040832.74      | 61547806.66  |
+| RS                  | Rio Grande do Sul   | 195646541.52     | 60509028.73      | 59648031.64  |
+| RO                  | Rondônia            | 121337323.24     | 60745521.48      | 59377590.45  |
+| ES                  | Espírito Santo      | 259673559.26     | 62441931.20      | 55547718.89  |
+| PA                  | Pará                | 123783086.22     | 53595939.95      | 52766905.14  |
+| PE                  | Pernambuco          | 260855475.26     | 53979573.40      | 51010436.53  |
+| MG                  | Minas Gerais        | 231421284.04     | 48715054.81      | 44331249.32  |
+| RR                  | Roraima             | 156017365.56     | 43524749.37      | 42511784.01  |
+| RN                  | Rio Grande do Norte | 113235218.46     | 41552001.75      | 39058333.52  |
+| SC                  | Santa Catarina      | 119020464.61     | 38709458.42      | 38671148.32  |
+| TO                  | Tocantins           | 167345844.25     | 35389461.52      | 35034669.05  |
+| PI                  | Piauí               | 51875714.98      | 28135115.66      | 27751418.10  |
+| GO                  | Goiás               | 113433210.98     | 12889509.70      | 7137978.20   |
 
 
 ### Explicação da Consulta
@@ -1345,28 +1344,28 @@ GROUP BY c.nome_cidade, e.sigla_uf
 ORDER BY total_pago DESC
 LIMIT 20;
 ```
-| cidade | unidade\_federativa | total\_empenhado | total\_liquidado | total\_pago |
-| :--- | :--- | :--- | :--- | :--- |
-| BOA VISTA | RR | 205157827.00 | 50447556.64 | 50199596.04 |
-| DUQUE DE CAXIAS | RJ | 45341024.00 | 45341024.00 | 45341024.00 |
-| ARAPIRACA | AL | 46346879.00 | 41402749.00 | 41402749.00 |
-| CARIACICA | ES | 50871218.00 | 40874877.00 | 40874877.00 |
-| SÃO JOÃO DE MERITI | RJ | 39198584.00 | 39198584.00 | 39198584.00 |
-| TUCURUÍ | PA | 37871585.00 | 37871585.00 | 37871585.00 |
-| MURIAÉ | MG | 36137850.00 | 35200000.00 | 35200000.00 |
-| COARI | AM | 31634455.83 | 31434456.00 | 31434456.00 |
-| MANAUS | AM | 45144107.73 | 30411038.59 | 30411038.59 |
-| RIO DE JANEIRO | RJ | 42353257.74 | 28146830.46 | 28146830.46 |
-| MAGÉ | RJ | 25600000.00 | 25600000.00 | 25600000.00 |
-| SÃO GONÇALO | RJ | 32382013.00 | 23297821.00 | 23297821.00 |
-| OSASCO | SP | 22000000.00 | 22000000.00 | 22000000.00 |
-| EMBU | SP | 20260000.00 | 20260000.00 | 20260000.00 |
-| CARAPICUÍBA | SP | 20100000.00 | 20100000.00 | 20100000.00 |
-| UBERLÂNDIA | MG | 20934477.48 | 19943876.81 | 19943876.81 |
-| CURITIBA | PR | 20037896.00 | 19837896.00 | 19837896.00 |
-| PARINTINS | AM | 19685679.00 | 19685679.00 | 19685679.00 |
-| ANANINDEUA | PA | 17535792.00 | 17535792.00 | 17535792.00 |
-| GUARAREMA | SP | 16833601.00 | 16833601.00 | 16833601.00 |
+| cidade             | unidade\_federativa | total\_empenhado | total\_liquidado | total\_pago |
+|:-------------------|:--------------------|:-----------------|:-----------------|:------------|
+| BOA VISTA          | RR                  | 205157827.00     | 50447556.64      | 50199596.04 |
+| DUQUE DE CAXIAS    | RJ                  | 45341024.00      | 45341024.00      | 45341024.00 |
+| ARAPIRACA          | AL                  | 46346879.00      | 41402749.00      | 41402749.00 |
+| CARIACICA          | ES                  | 50871218.00      | 40874877.00      | 40874877.00 |
+| SÃO JOÃO DE MERITI | RJ                  | 39198584.00      | 39198584.00      | 39198584.00 |
+| TUCURUÍ            | PA                  | 37871585.00      | 37871585.00      | 37871585.00 |
+| MURIAÉ             | MG                  | 36137850.00      | 35200000.00      | 35200000.00 |
+| COARI              | AM                  | 31634455.83      | 31434456.00      | 31434456.00 |
+| MANAUS             | AM                  | 45144107.73      | 30411038.59      | 30411038.59 |
+| RIO DE JANEIRO     | RJ                  | 42353257.74      | 28146830.46      | 28146830.46 |
+| MAGÉ               | RJ                  | 25600000.00      | 25600000.00      | 25600000.00 |
+| SÃO GONÇALO        | RJ                  | 32382013.00      | 23297821.00      | 23297821.00 |
+| OSASCO             | SP                  | 22000000.00      | 22000000.00      | 22000000.00 |
+| EMBU               | SP                  | 20260000.00      | 20260000.00      | 20260000.00 |
+| CARAPICUÍBA        | SP                  | 20100000.00      | 20100000.00      | 20100000.00 |
+| UBERLÂNDIA         | MG                  | 20934477.48      | 19943876.81      | 19943876.81 |
+| CURITIBA           | PR                  | 20037896.00      | 19837896.00      | 19837896.00 |
+| PARINTINS          | AM                  | 19685679.00      | 19685679.00      | 19685679.00 |
+| ANANINDEUA         | PA                  | 17535792.00      | 17535792.00      | 17535792.00 |
+| GUARAREMA          | SP                  | 16833601.00      | 16833601.00      | 16833601.00 |
 
 
 ### Explicação da Consulta
@@ -1422,83 +1421,83 @@ ORDER BY percentual_executado DESC, total_empenhado DESC
 LIMIT 50;
 ```
 
-| autor | unidade\_federativa | funcao | total\_empenhado | total\_pago | total\_emendas | classificacao\_execucao | percentual\_executado |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Autor Desconhecido | CE | Gestão ambiental | 157460002.00 | 157460002.00 | 2 | Alta Execução | 100.00 |
-| BANCADA DO RIO GRANDE DO SUL | RS | Saúde | 138777477.00 | 138777477.00 | 10 | Alta Execução | 100.00 |
-| BANCADA DE SERGIPE | SP | Saúde | 118458412.00 | 118458412.00 | 5 | Alta Execução | 100.00 |
-| BANCADA DE PERNAMBUCO | PE | Saúde | 65978303.00 | 65978303.00 | 4 | Alta Execução | 100.00 |
-| BANCADA DE ALAGOAS | SP | Saúde | 57710906.00 | 57710906.00 | 3 | Alta Execução | 100.00 |
-| BANCADA DO AMAZONAS | AM | Saúde | 57624188.00 | 57624188.00 | 2 | Alta Execução | 100.00 |
-| BANCADA DO RIO GRANDE DO SUL | RS | Assistência social | 45016621.99 | 45016621.99 | 2 | Alta Execução | 100.00 |
-| STEFANO AGUIAR | MG | Saúde | 45008117.00 | 45008117.00 | 7 | Alta Execução | 100.00 |
-| BANCADA DE RONDONIA | RO | Saúde | 43311964.00 | 43311964.00 | 2 | Alta Execução | 100.00 |
-| PASTOR SARGENTO ISIDORIO | BA | Saúde | 42916240.00 | 42916240.00 | 3 | Alta Execução | 100.00 |
-| EDUARDO GIRAO | SP | Saúde | 31683006.00 | 31683006.00 | 3 | Alta Execução | 100.00 |
-| BANCADA DE RORAIMA | SP | Saúde | 30841550.00 | 30841550.00 | 1 | Alta Execução | 100.00 |
-| OLIVAL MARQUES | PA | Saúde | 30251697.00 | 30251697.00 | 3 | Alta Execução | 100.00 |
-| RICARDO SILVA | SP | Saúde | 30000000.00 | 30000000.00 | 1 | Alta Execução | 100.00 |
-| BANCADA DO DISTRITO FEDERAL | DF | Trabalho | 29612094.00 | 29612094.00 | 1 | Alta Execução | 100.00 |
-| FLAVIA ARRUDA | GO | Saúde | 25481984.00 | 25481984.00 | 1 | Alta Execução | 100.00 |
-| BANCADA DE RONDONIA | RO | Encargos especiais | 25000000.00 | 25000000.00 | 1 | Alta Execução | 100.00 |
-| RICARDO DA KAROL | RJ | Desporto e lazer | 24050968.00 | 24050967.99 | 5 | Alta Execução | 100.00 |
-| RELATOR GERAL | SC | Ciência e Tecnologia | 20400371.00 | 20400371.00 | 1 | Alta Execução | 100.00 |
-| BANCADA DO MARANHAO | SP | Saúde | 20125526.00 | 20125526.00 | 3 | Alta Execução | 100.00 |
-| DANIELLA RIBEIRO | PB | Encargos especiais | 19367425.00 | 19367425.00 | 2 | Alta Execução | 100.00 |
-| JORGE GOETTEN | SC | Saúde | 18936000.00 | 18936000.00 | 1 | Alta Execução | 100.00 |
-| PROFESSORA GORETH | AP | Saúde | 18935793.00 | 18935793.00 | 1 | Alta Execução | 100.00 |
-| PASTOR SARGENTO ISIDORIO | BA | Encargos especiais | 18935792.00 | 18935792.00 | 1 | Alta Execução | 100.00 |
-| FABIO GARCIA | MT | Encargos especiais | 18871585.00 | 18871585.00 | 1 | Alta Execução | 100.00 |
-| BANCADA DE MINAS GERAIS | MG | Comunicações | 18816356.00 | 18816356.00 | 1 | Alta Execução | 100.00 |
-| BANCADA DO MATO GROSSO | SP | Saúde | 18523034.00 | 18523034.00 | 2 | Alta Execução | 100.00 |
-| DUARTE JR. | MA | Encargos especiais | 18235792.00 | 18235792.00 | 1 | Alta Execução | 100.00 |
-| SORAYA THRONICKE | MS | Encargos especiais | 18130973.00 | 18130973.00 | 1 | Alta Execução | 100.00 |
-| BANCADA DO PIAUI | SP | Saúde | 17159464.00 | 17159464.00 | 1 | Alta Execução | 100.00 |
-| DUARTE JR. | MA | Saúde | 16935793.00 | 16935793.00 | 1 | Alta Execução | 100.00 |
-| TITO | BA | Saúde | 16110221.00 | 16110221.00 | 2 | Alta Execução | 100.00 |
-| BIRA DO PINDARE | MA | Encargos especiais | 16051699.00 | 16051699.00 | 1 | Alta Execução | 100.00 |
-| JONES MOURA | RJ | Desporto e lazer | 16051699.00 | 16051698.99 | 2 | Alta Execução | 100.00 |
-| ROSANGELA MORO | SP | Encargos especiais | 15500000.00 | 15500000.00 | 2 | Alta Execução | 100.00 |
-| EDUARDO GOMES | SP | Saúde | 15000000.00 | 15000000.00 | 2 | Alta Execução | 100.00 |
-| GERALDO RESENDE | MS | Encargos especiais | 14588000.00 | 14588000.00 | 1 | Alta Execução | 100.00 |
-| RODOLFO NOGUEIRA | MS | Encargos especiais | 14265792.00 | 14265792.00 | 3 | Alta Execução | 100.00 |
-| ACACIO FAVACHO | AP | Saúde | 14149741.00 | 14149741.00 | 2 | Alta Execução | 100.00 |
-| MARCOS AURELIO SAMPAIO | PI | Saúde | 13639993.00 | 13639993.00 | 2 | Alta Execução | 100.00 |
-| BANCADA DE TOCANTINS | SP | Saúde | 12800000.00 | 12800000.00 | 2 | Alta Execução | 100.00 |
-| DAGOBERTO | MS | Encargos especiais | 12455000.00 | 12455000.00 | 1 | Alta Execução | 100.00 |
-| SOCORRO NERI | AC | Saúde | 11635682.00 | 11635682.00 | 3 | Alta Execução | 100.00 |
-| CORONEL ULYSSES | AC | Saúde | 11500000.00 | 11500000.00 | 1 | Alta Execução | 100.00 |
-| GERLEN DINIZ | AC | Encargos especiais | 10950000.00 | 10950000.00 | 1 | Alta Execução | 100.00 |
-| ANDRE ABDON | AP | Encargos especiais | 10793279.00 | 10793279.00 | 2 | Alta Execução | 100.00 |
-| GERLEN DINIZ | AC | Saúde | 10649989.00 | 10649989.00 | 2 | Alta Execução | 100.00 |
-| RAIMUNDO SANTOS | PA | Saúde | 10000000.00 | 10000000.00 | 1 | Alta Execução | 100.00 |
-| BANCADA DO PARANA | PR | Ciência e Tecnologia | 10000000.00 | 10000000.00 | 1 | Alta Execução | 100.00 |
-| JESSICA SALES | AC | Encargos especiais | 9966248.00 | 9966248.00 | 1 | Alta Execução | 100.00 |
+| autor                        | unidade\_federativa | funcao               | total\_empenhado | total\_pago  | total\_emendas | classificacao\_execucao | percentual\_executado |
+|:-----------------------------|:--------------------|:---------------------|:-----------------|:-------------|:---------------|:------------------------|:----------------------|
+| Autor Desconhecido           | CE                  | Gestão ambiental     | 157460002.00     | 157460002.00 | 2              | Alta Execução           | 100.00                |
+| BANCADA DO RIO GRANDE DO SUL | RS                  | Saúde                | 138777477.00     | 138777477.00 | 10             | Alta Execução           | 100.00                |
+| BANCADA DE SERGIPE           | SP                  | Saúde                | 118458412.00     | 118458412.00 | 5              | Alta Execução           | 100.00                |
+| BANCADA DE PERNAMBUCO        | PE                  | Saúde                | 65978303.00      | 65978303.00  | 4              | Alta Execução           | 100.00                |
+| BANCADA DE ALAGOAS           | SP                  | Saúde                | 57710906.00      | 57710906.00  | 3              | Alta Execução           | 100.00                |
+| BANCADA DO AMAZONAS          | AM                  | Saúde                | 57624188.00      | 57624188.00  | 2              | Alta Execução           | 100.00                |
+| BANCADA DO RIO GRANDE DO SUL | RS                  | Assistência social   | 45016621.99      | 45016621.99  | 2              | Alta Execução           | 100.00                |
+| STEFANO AGUIAR               | MG                  | Saúde                | 45008117.00      | 45008117.00  | 7              | Alta Execução           | 100.00                |
+| BANCADA DE RONDONIA          | RO                  | Saúde                | 43311964.00      | 43311964.00  | 2              | Alta Execução           | 100.00                |
+| PASTOR SARGENTO ISIDORIO     | BA                  | Saúde                | 42916240.00      | 42916240.00  | 3              | Alta Execução           | 100.00                |
+| EDUARDO GIRAO                | SP                  | Saúde                | 31683006.00      | 31683006.00  | 3              | Alta Execução           | 100.00                |
+| BANCADA DE RORAIMA           | SP                  | Saúde                | 30841550.00      | 30841550.00  | 1              | Alta Execução           | 100.00                |
+| OLIVAL MARQUES               | PA                  | Saúde                | 30251697.00      | 30251697.00  | 3              | Alta Execução           | 100.00                |
+| RICARDO SILVA                | SP                  | Saúde                | 30000000.00      | 30000000.00  | 1              | Alta Execução           | 100.00                |
+| BANCADA DO DISTRITO FEDERAL  | DF                  | Trabalho             | 29612094.00      | 29612094.00  | 1              | Alta Execução           | 100.00                |
+| FLAVIA ARRUDA                | GO                  | Saúde                | 25481984.00      | 25481984.00  | 1              | Alta Execução           | 100.00                |
+| BANCADA DE RONDONIA          | RO                  | Encargos especiais   | 25000000.00      | 25000000.00  | 1              | Alta Execução           | 100.00                |
+| RICARDO DA KAROL             | RJ                  | Desporto e lazer     | 24050968.00      | 24050967.99  | 5              | Alta Execução           | 100.00                |
+| RELATOR GERAL                | SC                  | Ciência e Tecnologia | 20400371.00      | 20400371.00  | 1              | Alta Execução           | 100.00                |
+| BANCADA DO MARANHAO          | SP                  | Saúde                | 20125526.00      | 20125526.00  | 3              | Alta Execução           | 100.00                |
+| DANIELLA RIBEIRO             | PB                  | Encargos especiais   | 19367425.00      | 19367425.00  | 2              | Alta Execução           | 100.00                |
+| JORGE GOETTEN                | SC                  | Saúde                | 18936000.00      | 18936000.00  | 1              | Alta Execução           | 100.00                |
+| PROFESSORA GORETH            | AP                  | Saúde                | 18935793.00      | 18935793.00  | 1              | Alta Execução           | 100.00                |
+| PASTOR SARGENTO ISIDORIO     | BA                  | Encargos especiais   | 18935792.00      | 18935792.00  | 1              | Alta Execução           | 100.00                |
+| FABIO GARCIA                 | MT                  | Encargos especiais   | 18871585.00      | 18871585.00  | 1              | Alta Execução           | 100.00                |
+| BANCADA DE MINAS GERAIS      | MG                  | Comunicações         | 18816356.00      | 18816356.00  | 1              | Alta Execução           | 100.00                |
+| BANCADA DO MATO GROSSO       | SP                  | Saúde                | 18523034.00      | 18523034.00  | 2              | Alta Execução           | 100.00                |
+| DUARTE JR.                   | MA                  | Encargos especiais   | 18235792.00      | 18235792.00  | 1              | Alta Execução           | 100.00                |
+| SORAYA THRONICKE             | MS                  | Encargos especiais   | 18130973.00      | 18130973.00  | 1              | Alta Execução           | 100.00                |
+| BANCADA DO PIAUI             | SP                  | Saúde                | 17159464.00      | 17159464.00  | 1              | Alta Execução           | 100.00                |
+| DUARTE JR.                   | MA                  | Saúde                | 16935793.00      | 16935793.00  | 1              | Alta Execução           | 100.00                |
+| TITO                         | BA                  | Saúde                | 16110221.00      | 16110221.00  | 2              | Alta Execução           | 100.00                |
+| BIRA DO PINDARE              | MA                  | Encargos especiais   | 16051699.00      | 16051699.00  | 1              | Alta Execução           | 100.00                |
+| JONES MOURA                  | RJ                  | Desporto e lazer     | 16051699.00      | 16051698.99  | 2              | Alta Execução           | 100.00                |
+| ROSANGELA MORO               | SP                  | Encargos especiais   | 15500000.00      | 15500000.00  | 2              | Alta Execução           | 100.00                |
+| EDUARDO GOMES                | SP                  | Saúde                | 15000000.00      | 15000000.00  | 2              | Alta Execução           | 100.00                |
+| GERALDO RESENDE              | MS                  | Encargos especiais   | 14588000.00      | 14588000.00  | 1              | Alta Execução           | 100.00                |
+| RODOLFO NOGUEIRA             | MS                  | Encargos especiais   | 14265792.00      | 14265792.00  | 3              | Alta Execução           | 100.00                |
+| ACACIO FAVACHO               | AP                  | Saúde                | 14149741.00      | 14149741.00  | 2              | Alta Execução           | 100.00                |
+| MARCOS AURELIO SAMPAIO       | PI                  | Saúde                | 13639993.00      | 13639993.00  | 2              | Alta Execução           | 100.00                |
+| BANCADA DE TOCANTINS         | SP                  | Saúde                | 12800000.00      | 12800000.00  | 2              | Alta Execução           | 100.00                |
+| DAGOBERTO                    | MS                  | Encargos especiais   | 12455000.00      | 12455000.00  | 1              | Alta Execução           | 100.00                |
+| SOCORRO NERI                 | AC                  | Saúde                | 11635682.00      | 11635682.00  | 3              | Alta Execução           | 100.00                |
+| CORONEL ULYSSES              | AC                  | Saúde                | 11500000.00      | 11500000.00  | 1              | Alta Execução           | 100.00                |
+| GERLEN DINIZ                 | AC                  | Encargos especiais   | 10950000.00      | 10950000.00  | 1              | Alta Execução           | 100.00                |
+| ANDRE ABDON                  | AP                  | Encargos especiais   | 10793279.00      | 10793279.00  | 2              | Alta Execução           | 100.00                |
+| GERLEN DINIZ                 | AC                  | Saúde                | 10649989.00      | 10649989.00  | 2              | Alta Execução           | 100.00                |
+| RAIMUNDO SANTOS              | PA                  | Saúde                | 10000000.00      | 10000000.00  | 1              | Alta Execução           | 100.00                |
+| BANCADA DO PARANA            | PR                  | Ciência e Tecnologia | 10000000.00      | 10000000.00  | 1              | Alta Execução           | 100.00                |
+| JESSICA SALES                | AC                  | Encargos especiais   | 9966248.00       | 9966248.00   | 1              | Alta Execução           | 100.00                |
 
 ### Explicação da Consulta
 
 A consulta utiliza CTEs (Common Table Expressions) para melhorar a legibilidade e modularizar a análise:
-1.	CTE Emendas_Agrupadas
-- Agrupa as emendas por:
-- Autor da emenda
-- Unidade da Federação (UF)
-- Função governamental (área de aplicação da verba)
-- Calcula os totais:
-- Valor empenhado
-- Valor pago
-- Quantidade de emendas registradas
+1. CTE Emendas_Agrupadas
+   - Agrupa as emendas por:
+   - Autor da emenda
+   - Unidade da Federação (UF)
+   - Função governamental (área de aplicação da verba)
+   - Calcula os totais:
+   - Valor empenhado
+   - Valor pago
+   - Quantidade de emendas registradas
 
-2.	CTE Desempenho_Execucao
-- Cria uma classificação de execução das emendas baseada no percentual pago:
-- “Sem Execução” → Emendas sem valores empenhados.
-- “Alta Execução” → Acima de 90% do valor empenhado foi pago.
-- “Execução Moderada” → Entre 50% e 90% foi pago.
-- “Baixa Execução” → Abaixo de 50% foi pago.
-- Adiciona um percentual de execução formatado (%).
-
+2. CTE Desempenho_Execucao
+   - Cria uma classificação de execução das emendas baseada no percentual pago:
+   - “Sem Execução” → Emendas sem valores empenhados.
+   - “Alta Execução” → Acima de 90% do valor empenhado foi pago.
+   -  “Execução Moderada” → Entre 50% e 90% foi pago.
+   -  “Baixa Execução” → Abaixo de 50% foi pago.
+   -  Adiciona um percentual de execução formatado (%).
+     
 3.	Consulta Final
-- Ordena os resultados primeiro pelo percentual executado e depois pelo total empenhado.
-- Retorna os 50 registros mais relevantes.
+   - Ordena os resultados primeiro pelo percentual executado e depois pelo total empenhado.
+   - Retorna os 50 registros mais relevantes.
 
 ## Consulta 7 - Quantidade de Emendas de Cada Autor
 ```SQL
@@ -1512,28 +1511,28 @@ ORDER BY total_emendas DESC
 LIMIT 20
 ;
 ```
-| autor | total\_emendas |
-| :--- | :--- |
-| Autor Desconhecido | 15534 |
-| RELATOR GERAL | 2138 |
-| JANDIRA FEGHALI | 200 |
-| GLAUBER BRAGA | 191 |
-| ALESSANDRO MOLON | 190 |
-| LIDICE DA MATA | 184 |
-| CARLOS SAMPAIO | 183 |
-| PEDRO UCZAI | 180 |
-| IVAN VALENTE | 180 |
-| PR. MARCO FELICIANO | 177 |
-| LUIZA ERUNDINA | 176 |
-| VICENTINHO | 176 |
-| MARIA DO ROSARIO | 174 |
-| PAULO TEIXEIRA | 173 |
-| ERIKA KOKAY | 173 |
-| BOHN GASS | 169 |
-| PADRE JOAO | 168 |
-| TASSO JEREISSATI | 167 |
-| STEFANO AGUIAR | 166 |
-| BENEDITA DA SILVA | 163 |
+| autor               | total\_emendas |
+|:--------------------|:---------------|
+| Autor Desconhecido  | 15534          |
+| RELATOR GERAL       | 2138           |
+| JANDIRA FEGHALI     | 200            |
+| GLAUBER BRAGA       | 191            |
+| ALESSANDRO MOLON    | 190            |
+| LIDICE DA MATA      | 184            |
+| CARLOS SAMPAIO      | 183            |
+| PEDRO UCZAI         | 180            |
+| IVAN VALENTE        | 180            |
+| PR. MARCO FELICIANO | 177            |
+| LUIZA ERUNDINA      | 176            |
+| VICENTINHO          | 176            |
+| MARIA DO ROSARIO    | 174            |
+| PAULO TEIXEIRA      | 173            |
+| ERIKA KOKAY         | 173            |
+| BOHN GASS           | 169            |
+| PADRE JOAO          | 168            |
+| TASSO JEREISSATI    | 167            |
+| STEFANO AGUIAR      | 166            |
+| BENEDITA DA SILVA   | 163            |
 
 ### Explicação da Consulta
 1.	Seleciona o nome do autor da emenda.
@@ -1571,56 +1570,58 @@ ORDER BY indice_percentual DESC
 LIMIT 20;
 ;
 ```
-| autor | total\_emendas | media\_nacional | indice\_percentual |
-| :--- | :--- | :--- | :--- |
-| JANDIRA FEGHALI | 200 | 41.5863 | 480.93 |
-| GLAUBER BRAGA | 191 | 41.5863 | 459.29 |
-| ALESSANDRO MOLON | 190 | 41.5863 | 456.88 |
-| CARLOS SAMPAIO | 183 | 41.5863 | 440.05 |
-| PEDRO UCZAI | 180 | 41.5863 | 432.83 |
-| IVAN VALENTE | 180 | 41.5863 | 432.83 |
-| PR. MARCO FELICIANO | 177 | 41.5863 | 425.62 |
-| VICENTINHO | 176 | 41.5863 | 423.22 |
-| LUIZA ERUNDINA | 176 | 41.5863 | 423.22 |
-| MARIA DO ROSARIO | 174 | 41.5863 | 418.41 |
-| ERIKA KOKAY | 173 | 41.5863 | 416.00 |
-| PAULO TEIXEIRA | 173 | 41.5863 | 416.00 |
-| BOHN GASS | 169 | 41.5863 | 406.38 |
-| PADRE JOAO | 168 | 41.5863 | 403.98 |
-| TASSO JEREISSATI | 167 | 41.5863 | 401.57 |
-| STEFANO AGUIAR | 166 | 41.5863 | 399.17 |
-| BENEDITA DA SILVA | 163 | 41.5863 | 391.96 |
-| LEONARDO MONTEIRO | 162 | 41.5863 | 389.55 |
-| GONZAGA PATRIOTA | 161 | 41.5863 | 387.15 |
-| HELDER SALOMAO | 161 | 41.5863 | 387.15 |
+| autor               | total\_emendas | media\_nacional | indice\_percentual |
+|:--------------------|:---------------|:----------------|:-------------------|
+| JANDIRA FEGHALI     | 200            | 41.5863         | 480.93             |
+| GLAUBER BRAGA       | 191            | 41.5863         | 459.29             |
+| ALESSANDRO MOLON    | 190            | 41.5863         | 456.88             |
+| CARLOS SAMPAIO      | 183            | 41.5863         | 440.05             |
+| PEDRO UCZAI         | 180            | 41.5863         | 432.83             |
+| IVAN VALENTE        | 180            | 41.5863         | 432.83             |
+| PR. MARCO FELICIANO | 177            | 41.5863         | 425.62             |
+| VICENTINHO          | 176            | 41.5863         | 423.22             |
+| LUIZA ERUNDINA      | 176            | 41.5863         | 423.22             |
+| MARIA DO ROSARIO    | 174            | 41.5863         | 418.41             |
+| ERIKA KOKAY         | 173            | 41.5863         | 416.00             |
+| PAULO TEIXEIRA      | 173            | 41.5863         | 416.00             |
+| BOHN GASS           | 169            | 41.5863         | 406.38             |
+| PADRE JOAO          | 168            | 41.5863         | 403.98             |
+| TASSO JEREISSATI    | 167            | 41.5863         | 401.57             |
+| STEFANO AGUIAR      | 166            | 41.5863         | 399.17             |
+| BENEDITA DA SILVA   | 163            | 41.5863         | 391.96             |
+| LEONARDO MONTEIRO   | 162            | 41.5863         | 389.55             |
+| GONZAGA PATRIOTA    | 161            | 41.5863         | 387.15             |
+| HELDER SALOMAO      | 161            | 41.5863         | 387.15             |
 
 
 ### Explicação da Consulta
-1.	Criação da CTE EmendasPorAutor
-- Conta o número de emendas por parlamentar.
-- Exclui os parlamentares “Relator Geral” e “Relator Desconhecido”.
-- Agrupa os dados pelo nome do parlamentar.
-2.	Criação da CTE MediaEmendas
-- Calcula a média nacional de emendas por parlamentar, considerando apenas os autores restantes.
-3.	Consulta Final
-- Retorna o total de emendas de cada parlamentar.
-- Exibe a média nacional de emendas.
-- Calcula um índice percentual, mostrando o quanto cada parlamentar está acima ou abaixo da média nacional.
-- Ordena os parlamentares do maior para o menor índice.
+1. Criação da CTE EmendasPorAutor
+    - Conta o número de emendas por parlamentar.
+    - Exclui os parlamentares “Relator Geral” e “Relator Desconhecido”.
+    - Agrupa os dados pelo nome do parlamentar.
+
+2. Criação da CTE MediaEmendas
+    - Calcula a média nacional de emendas por parlamentar, considerando apenas os autores restantes.
+
+3. Consulta Final
+    - Retorna o total de emendas de cada parlamentar.
+    - Exibe a média nacional de emendas.
+    - Calcula um índice percentual, mostrando o quanto cada parlamentar está acima ou abaixo da média nacional.
+    - Ordena os parlamentares do maior para o menor índice.
 
 ### Motivo do Uso do CROSS JOIN na Consulta 9
 Na Consulta 8, utilizamos um CROSS JOIN para calcular a comparação entre o total de emendas de cada parlamentar e a média nacional. Vamos detalhar por que essa escolha foi feita e como ela funciona na prática.
 
 1. Média Nacional é um único valor, mas precisamos compará-lo com vários parlamentares
-- A subconsulta MediaEmendas retorna apenas um valor: a média nacional do número de emendas por parlamentar.
-- Já a subconsulta EmendasPorAutor retorna uma linha para cada parlamentar.
-- Precisamos que cada linha de EmendasPorAutor tenha acesso ao único valor de MediaEmendas, para podermos calcular o índice percentual.
-- Como não há um campo em comum para conectar os dados diretamente, usamos CROSS JOIN.
+    - A subconsulta MediaEmendas retorna apenas um valor: a média nacional do número de emendas por parlamentar.
+    - Já a subconsulta EmendasPorAutor retorna uma linha para cada parlamentar.
+    - Precisamos que cada linha de EmendasPorAutor tenha acesso ao único valor de MediaEmendas, para podermos calcular o índice percentual.
+    - Como não há um campo em comum para conectar os dados diretamente, usamos CROSS JOIN.
 
 2. Alternativas como JOIN não funcionariam diretamente
-- Se tentássemos um INNER JOIN, precisaríamos de uma chave de junção entre EmendasPorAutor e MediaEmendas, mas a média nacional não tem um campo correspondente em EmendasPorAutor.
-- Um LEFT JOIN também exigiria uma condição de junção, que não temos.
-- O CROSS JOIN resolve isso facilmente, replicando a média para todas as linhas da tabela EmendasPorAutor.
+    - Se tentássemos um INNER JOIN, precisaríamos de uma chave de junção entre EmendasPorAutor e MediaEmendas, mas a média nacional não tem um campo correspondente em EmendasPorAutor.
+    - Um LEFT JOIN também exigiria uma condição de junção, que não temos.
+    - O CROSS JOIN resolve isso facilmente, replicando a média para todas as linhas da tabela EmendasPorAutor.
 
 # Consultas com álgebra relacional
 
