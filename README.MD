@@ -1222,6 +1222,14 @@ Após a execução, a tabela log_relatorio_emendas será atualizada com os resul
 ---
 # Exemplos de consultas
 ## Consulta 1 - Valor total não pago das emendas parlamentares para cada ano
+### Linguagem natural
+- Objetivo: Obter o valor total não pago das emendas parlamentares para cada ano.
+- Cálculo:
+- O valor não pago é calculado como a diferença entre o valor empenhado e o valor pago.
+- Agrupamento: A soma é realizada por ano (ano_da_emenda).
+- Ordenação: Os resultados são apresentados em ordem decrescente, do ano mais recente para o mais antigo.
+
+### DQL
 ```SQL
 SELECT 
     eo.ano_da_emenda,
@@ -1232,6 +1240,7 @@ FROM emendas_otimizada eo
 GROUP BY eo.ano_da_emenda
 ORDER BY eo.ano_da_emenda DESC;
 ```
+
 | ano\_da\_emenda | total\_empenhado | total\_pago    | total\_nao\_pago |
 |:----------------|:-----------------|:---------------|:-----------------|
 | 2024            | 45599169440.81   | 31471329508.74 | 14127839932.07   |
@@ -1246,14 +1255,19 @@ ORDER BY eo.ano_da_emenda DESC;
 | 2015            | 3516461496.89    | 25864983.41    | 3490596513.48    |
 | 2014            | 6162372099.08    | 140289522.84   | 6022082576.24    |
 
-### Explicação da Consulta
-- Objetivo: Obter o valor total não pago das emendas parlamentares para cada ano.
-- Cálculo:
-- O valor não pago é calculado como a diferença entre o valor empenhado e o valor pago.
-- Agrupamento: A soma é realizada por ano (ano_da_emenda).
-- Ordenação: Os resultados são apresentados em ordem decrescente, do ano mais recente para o mais antigo.
 
 ## Consulta 2 - Valores das Emendas Parlamentares agrupadas por Autor
+### Linguagem natural
+- Objetivo: Exibir os valores empenhados, liquidados e pagos das emendas parlamentares agrupados por autor.
+- Cálculo:
+-  total_empenhado: Soma dos valores empenhados por cada autor.
+-  total_liquidado: Soma dos valores que foram liquidados (formalizados para pagamento).
+-  total_pago: Soma dos valores efetivamente pagos ao autor.
+-  Agrupamento: Os valores são agrupados por nome_do_autor_da_emenda.
+-  Ordenação: Os resultados são ordenados pelo total_pago, do maior para o menor.
+-  Limitação: Exibe os 16 primeiros registros, conforme solicitado.
+
+### DQL
 ```SQL
 SELECT 
     a.nome_do_autor_da_emenda AS autor,
@@ -1286,20 +1300,17 @@ LIMIT 16;
 | BANCADA DO RIO GRANDE DO NORTE | 2300097884.72    | 922272496.68     | 893779200.72   |
 | BANCADA DE RONDONIA            | 2187925551.10    | 871539724.03     | 842880747.27   |
 
-
-### Explicação da Consulta
-- Objetivo: Exibir os valores empenhados, liquidados e pagos das emendas parlamentares agrupados por autor.
-- Cálculo:
--  total_empenhado: Soma dos valores empenhados por cada autor.
--  total_liquidado: Soma dos valores que foram liquidados (formalizados para pagamento).
--  total_pago: Soma dos valores efetivamente pagos ao autor.
--  Agrupamento: Os valores são agrupados por nome_do_autor_da_emenda.
--  Ordenação: Os resultados são ordenados pelo total_pago, do maior para o menor.
--  Limitação: Exibe os 16 primeiros registros, conforme solicitado.
-
-
 ## Consulta 3 - Áreas de atuação governamental com maior volume de recursos
+### Linguagem natural
+- Objetivo: Identificar as áreas de atuação do governo que receberam os maiores volumes de recursos através das emendas parlamentares.
+- Cálculo:
+- total_empenhado: Soma dos valores empenhados por função e subfunção governamental.
+- total_liquidado: Soma dos valores liquidados, indicando o montante já formalizado para pagamento.
+- total_pago: Soma dos valores efetivamente pagos dentro da função e subfunção.
+- Agrupamento: Os valores são agrupados por função e subfunção governamental.
+- Ordenação: O resultado é ordenado pelo total_pago, do maior para o menor, permitindo visualizar quais áreas receberam mais recursos.
 
+### DQL
 ```SQL
 SELECT 
     f.nome_funcao AS area_atuacao,
@@ -1314,16 +1325,43 @@ GROUP BY f.nome_funcao, s.nome_subfuncao
 ORDER BY total_pago DESC
 LIMIT 20;
 ```
-### Explicação da Consulta
-- Objetivo: Identificar as áreas de atuação do governo que receberam os maiores volumes de recursos através das emendas parlamentares.
-- Cálculo:
-- total_empenhado: Soma dos valores empenhados por função e subfunção governamental.
-- total_liquidado: Soma dos valores liquidados, indicando o montante já formalizado para pagamento.
-- total_pago: Soma dos valores efetivamente pagos dentro da função e subfunção.
-- Agrupamento: Os valores são agrupados por função e subfunção governamental.
-- Ordenação: O resultado é ordenado pelo total_pago, do maior para o menor, permitindo visualizar quais áreas receberam mais recursos.
+| area\_atuacao      | subarea\_atuacao                      | total\_empenhado | total\_liquidado | total\_pago    |
+|:-------------------|:--------------------------------------|:-----------------|:-----------------|:---------------|
+| Saúde              | Atenção básica                        | 47778996500.75   | 38553494793.97   | 38378304547.40 |
+| Saúde              | Assistência hospitalar e ambulatorial | 44353814807.59   | 31423491231.35   | 31225559770.27 |
+| Encargos especiais | Outras transferências                 | 21586215513.00   | 19849431413.75   | 19849431413.75 |
+| Assistência social | Assistência comunitária               | 14131437785.39   | 12626246732.97   | 12621413199.26 |
+| Saúde              | Administração geral                   | 11555125470.25   | 9942004461.96    | 9936580795.75  |
+| Defesa nacional    | Defesa aérea                          | 9274131704.00    | 8809411997.26    | 8804530043.56  |
+| Saúde              | Múltiplo                              | 8033088267.71    | 6293944778.51    | 6287693825.95  |
+| Múltiplo           | Múltiplo                              | 15033532049.23   | 2424108017.71    | 2386398799.05  |
+| Transporte         | Transporte rodoviário                 | 6132915481.21    | 2427756593.67    | 2344821901.20  |
+| Segurança pública  | Policiamento                          | 5812442463.05    | 1513226328.33    | 1508909828.92  |
+| Agricultura        | Promoção da produção agropecuária     | 17029250987.79   | 1488472043.26    | 1390907498.60  |
+| Defesa nacional    | Defesa terrestre                      | 1624222089.29    | 1176811453.27    | 1162189320.21  |
+| Saúde              | Suporte profilático e terapêutico     | 1555789801.98    | 1160795891.70    | 1150398793.72  |
+| Saúde              | Formação de recursos humanos          | 1347407086.97    | 1125767123.87    | 1094343487.35  |
+| Educação           | Ensino superior                       | 4821222130.43    | 1168127113.78    | 950925371.75   |
+| Urbanismo          | Assistência comunitária               | 8328202784.04    | 941626221.02     | 747337862.98   |
+| Encargos especiais | Outros encargos especiais             | 634244027.00     | 520709395.85     | 515554076.96   |
+| Educação           | Ensino profissional                   | 2046983321.75    | 596508467.87     | 497258317.24   |
+| Defesa nacional    | Defesa naval                          | 1155771016.13    | 522145811.53     | 487202629.50   |
+| Gestão ambiental   | Recursos hídricos                     | 1508757412.52    | 550294797.47     | 486298458.43   |
+
 
 ## Consulta 4 - Valores das Emendas Parlamentares agrupadas por Unidade da Federação
+### Linguagem natural
+- Objetivo: Obter o total de valores empenhados, liquidados e pagos por Unidade da Federação (UF) para as emendas parlamentares de 2024.
+- Filtros:
+- Apenas emendas do ano de 2024 (WHERE eo.ano_da_emenda = 2024).
+- Cálculo:
+- total_empenhado: Soma dos valores empenhados por estado.
+- total_liquidado: Soma dos valores liquidados por estado.
+- total_pago: Soma dos valores pagos por estado.
+- Agrupamento: Os valores são agrupados por estado, identificados pelo sigla_uf (UF) e nome_estado.
+- Ordenação: O resultado é ordenado pelo total_pago em ordem decrescente (ORDER BY total_pago DESC).
+
+### DQL
 ```SQL
 SELECT 
     e.sigla_uf AS unidade_federativa,
@@ -1337,6 +1375,7 @@ WHERE eo.ano_da_emenda = 2024
 GROUP BY e.sigla_uf, e.nome_estado
 ORDER BY total_pago DESC;
 ```
+
 | unidade\_federativa | estado              | total\_empenhado | total\_liquidado | total\_pago  |
 |:--------------------|:--------------------|:-----------------|:-----------------|:-------------|
 | SP                  | São Paulo           | 930430515.39     | 438719419.75     | 433206584.03 |
@@ -1367,19 +1406,23 @@ ORDER BY total_pago DESC;
 | PI                  | Piauí               | 51875714.98      | 28135115.66      | 27751418.10  |
 | GO                  | Goiás               | 113433210.98     | 12889509.70      | 7137978.20   |
 
-
-### Explicação da Consulta
-- Objetivo: Obter o total de valores empenhados, liquidados e pagos por Unidade da Federação (UF) para as emendas parlamentares de 2024.
-- Filtros:
-- Apenas emendas do ano de 2024 (WHERE eo.ano_da_emenda = 2024).
-- Cálculo:
-- total_empenhado: Soma dos valores empenhados por estado.
-- total_liquidado: Soma dos valores liquidados por estado.
-- total_pago: Soma dos valores pagos por estado.
-- Agrupamento: Os valores são agrupados por estado, identificados pelo sigla_uf (UF) e nome_estado.
-- Ordenação: O resultado é ordenado pelo total_pago em ordem decrescente (ORDER BY total_pago DESC).
-
 ## Consulta 5 - Cidades/Municípios com maior volume de recursos em 2024
+### Linguagem natural
+- Objetivo: Identificar os 20 municípios que receberam maior volume de recursos (pagos) via emendas parlamentares no ano de 2024.
+- Filtros:
+- Considera apenas emendas de 2024 (WHERE eo.ano_da_emenda = 2024).
+- Cálculo:
+- total_empenhado: Soma dos valores empenhados por município.
+- total_liquidado: Soma dos valores liquidados por município.
+- total_pago: Soma dos valores pagos por município.
+- Agrupamento:
+- Os valores são agrupados por cidade e Unidade da Federação (UF).
+- Ordenação:
+- Ordenado pelo total_pago em ordem decrescente (ORDER BY total_pago DESC).
+- Limitação:
+- Retorna apenas os 20 municípios com maior volume de recursos pagos (LIMIT 20).
+
+### DQL
 ```SQL
 SELECT 
     c.nome_cidade AS cidade,
@@ -1395,6 +1438,7 @@ GROUP BY c.nome_cidade, e.sigla_uf
 ORDER BY total_pago DESC
 LIMIT 20;
 ```
+
 | cidade             | unidade\_federativa | total\_empenhado | total\_liquidado | total\_pago |
 |:-------------------|:--------------------|:-----------------|:-----------------|:------------|
 | BOA VISTA          | RR                  | 205157827.00     | 50447556.64      | 50199596.04 |
@@ -1418,23 +1462,33 @@ LIMIT 20;
 | ANANINDEUA         | PA                  | 17535792.00      | 17535792.00      | 17535792.00 |
 | GUARAREMA          | SP                  | 16833601.00      | 16833601.00      | 16833601.00 |
 
-
-### Explicação da Consulta
-- Objetivo: Identificar os 20 municípios que receberam maior volume de recursos (pagos) via emendas parlamentares no ano de 2024.
-- Filtros:
-- Considera apenas emendas de 2024 (WHERE eo.ano_da_emenda = 2024).
-- Cálculo:
-- total_empenhado: Soma dos valores empenhados por município.
-- total_liquidado: Soma dos valores liquidados por município.
-- total_pago: Soma dos valores pagos por município.
-- Agrupamento:
-- Os valores são agrupados por cidade e Unidade da Federação (UF).
-- Ordenação:
-- Ordenado pelo total_pago em ordem decrescente (ORDER BY total_pago DESC).
-- Limitação:
-- Retorna apenas os 20 municípios com maior volume de recursos pagos (LIMIT 20).
-
 ## Consulta 6 - Análise de Eficiência das Emendas Parlamentares - Relação entre Valor Empenhado e Valor Pago, considerando Autor, Estado e Função Governamental
+### Linguagem natural
+
+A consulta utiliza CTEs (Common Table Expressions) para melhorar a legibilidade e modularizar a análise:
+1. CTE Emendas_Agrupadas
+   - Agrupa as emendas por:
+   - Autor da emenda
+   - Unidade da Federação (UF)
+   - Função governamental (área de aplicação da verba)
+   - Calcula os totais:
+   - Valor empenhado
+   - Valor pago
+   - Quantidade de emendas registradas
+
+2. CTE Desempenho_Execucao
+   - Cria uma classificação de execução das emendas baseada no percentual pago:
+   - “Sem Execução” → Emendas sem valores empenhados.
+   - “Alta Execução” → Acima de 90% do valor empenhado foi pago.
+   -  “Execução Moderada” → Entre 50% e 90% foi pago.
+   -  “Baixa Execução” → Abaixo de 50% foi pago.
+   -  Adiciona um percentual de execução formatado (%).
+
+3.	Consulta Final
+- Ordena os resultados primeiro pelo percentual executado e depois pelo total empenhado.
+- Retorna os 50 registros mais relevantes.
+
+### DQL
 ```SQL
 WITH Emendas_Agrupadas AS (
     SELECT
@@ -1525,32 +1579,15 @@ LIMIT 50;
 | BANCADA DO PARANA            | PR                  | Ciência e Tecnologia | 10000000.00      | 10000000.00  | 1              | Alta Execução           | 100.00                |
 | JESSICA SALES                | AC                  | Encargos especiais   | 9966248.00       | 9966248.00   | 1              | Alta Execução           | 100.00                |
 
-### Explicação da Consulta
-
-A consulta utiliza CTEs (Common Table Expressions) para melhorar a legibilidade e modularizar a análise:
-1. CTE Emendas_Agrupadas
-   - Agrupa as emendas por:
-   - Autor da emenda
-   - Unidade da Federação (UF)
-   - Função governamental (área de aplicação da verba)
-   - Calcula os totais:
-   - Valor empenhado
-   - Valor pago
-   - Quantidade de emendas registradas
-
-2. CTE Desempenho_Execucao
-   - Cria uma classificação de execução das emendas baseada no percentual pago:
-   - “Sem Execução” → Emendas sem valores empenhados.
-   - “Alta Execução” → Acima de 90% do valor empenhado foi pago.
-   -  “Execução Moderada” → Entre 50% e 90% foi pago.
-   -  “Baixa Execução” → Abaixo de 50% foi pago.
-   -  Adiciona um percentual de execução formatado (%).
-     
-3.	Consulta Final
-   - Ordena os resultados primeiro pelo percentual executado e depois pelo total empenhado.
-   - Retorna os 50 registros mais relevantes.
 
 ## Consulta 7 - Quantidade de Emendas de Cada Autor
+### Linguagem natural
+1.	Seleciona o nome do autor da emenda.
+2.	Conta a quantidade total de emendas realizadas por cada autor.
+3.	Agrupa os resultados pelo nome do autor para consolidar a contagem.
+4.	Ordena os resultados de forma decrescente, priorizando os autores com maior número de emendas.
+
+### DQL
 ```SQL
 SELECT 
     a.nome_do_autor_da_emenda AS autor,
@@ -1585,14 +1622,23 @@ LIMIT 20
 | STEFANO AGUIAR      | 166            |
 | BENEDITA DA SILVA   | 163            |
 
-### Explicação da Consulta
-1.	Seleciona o nome do autor da emenda.
-2.	Conta a quantidade total de emendas realizadas por cada autor.
-3.	Agrupa os resultados pelo nome do autor para consolidar a contagem.
-4.	Ordena os resultados de forma decrescente, priorizando os autores com maior número de emendas.
-
-
 ## Consulta 8 - Comparação da Quantidade de Emendas por Parlamentar com a Média Nacional
+### Linguagem natural
+1. Criação da CTE EmendasPorAutor
+   - Conta o número de emendas por parlamentar.
+   - Exclui os parlamentares “Relator Geral” e “Relator Desconhecido”.
+   - Agrupa os dados pelo nome do parlamentar.
+
+2. Criação da CTE MediaEmendas
+   - Calcula a média nacional de emendas por parlamentar, considerando apenas os autores restantes.
+
+3. Consulta Final
+   - Retorna o total de emendas de cada parlamentar.
+   - Exibe a média nacional de emendas.
+   - Calcula um índice percentual, mostrando o quanto cada parlamentar está acima ou abaixo da média nacional.
+   - Ordena os parlamentares do maior para o menor índice.
+
+### DQL
 ```SQL
 WITH EmendasPorAutor AS (
     -- Calcula a quantidade de emendas por parlamentar, excluindo relator geral e desconhecido
@@ -1644,35 +1690,20 @@ LIMIT 20;
 | GONZAGA PATRIOTA    | 161            | 41.5863         | 387.15             |
 | HELDER SALOMAO      | 161            | 41.5863         | 387.15             |
 
-
-### Explicação da Consulta
-1. Criação da CTE EmendasPorAutor
-    - Conta o número de emendas por parlamentar.
-    - Exclui os parlamentares “Relator Geral” e “Relator Desconhecido”.
-    - Agrupa os dados pelo nome do parlamentar.
-
-2. Criação da CTE MediaEmendas
-    - Calcula a média nacional de emendas por parlamentar, considerando apenas os autores restantes.
-
-3. Consulta Final
-    - Retorna o total de emendas de cada parlamentar.
-    - Exibe a média nacional de emendas.
-    - Calcula um índice percentual, mostrando o quanto cada parlamentar está acima ou abaixo da média nacional.
-    - Ordena os parlamentares do maior para o menor índice.
-
-### Motivo do Uso do CROSS JOIN na Consulta 9
+### Motivo do Uso do CROSS JOIN na Consulta 8
 Na Consulta 8, utilizamos um CROSS JOIN para calcular a comparação entre o total de emendas de cada parlamentar e a média nacional. Vamos detalhar por que essa escolha foi feita e como ela funciona na prática.
 
 1. Média Nacional é um único valor, mas precisamos compará-lo com vários parlamentares
-    - A subconsulta MediaEmendas retorna apenas um valor: a média nacional do número de emendas por parlamentar.
-    - Já a subconsulta EmendasPorAutor retorna uma linha para cada parlamentar.
-    - Precisamos que cada linha de EmendasPorAutor tenha acesso ao único valor de MediaEmendas, para podermos calcular o índice percentual.
-    - Como não há um campo em comum para conectar os dados diretamente, usamos CROSS JOIN.
+   - A subconsulta MediaEmendas retorna apenas um valor: a média nacional do número de emendas por parlamentar.
+   - Já a subconsulta EmendasPorAutor retorna uma linha para cada parlamentar.
+   - Precisamos que cada linha de EmendasPorAutor tenha acesso ao único valor de MediaEmendas, para podermos calcular o índice percentual.
+   - Como não há um campo em comum para conectar os dados diretamente, usamos CROSS JOIN.
 
 2. Alternativas como JOIN não funcionariam diretamente
-    - Se tentássemos um INNER JOIN, precisaríamos de uma chave de junção entre EmendasPorAutor e MediaEmendas, mas a média nacional não tem um campo correspondente em EmendasPorAutor.
-    - Um LEFT JOIN também exigiria uma condição de junção, que não temos.
-    - O CROSS JOIN resolve isso facilmente, replicando a média para todas as linhas da tabela EmendasPorAutor.
+   - Se tentássemos um INNER JOIN, precisaríamos de uma chave de junção entre EmendasPorAutor e MediaEmendas, mas a média nacional não tem um campo correspondente em EmendasPorAutor.
+   - Um LEFT JOIN também exigiria uma condição de junção, que não temos.
+   - O CROSS JOIN resolve isso facilmente, replicando a média para todas as linhas da tabela EmendasPorAutor.
+
 
 # Consultas com álgebra relacional
 
