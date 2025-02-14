@@ -1,3 +1,7 @@
+
+# Link para apresentação
+https://gamma.app/docs/f5gtdhytqapi7gz?following_id=9zrg5yf1izduq5l&follow_on_start=true
+
 # Introdução
 A transparência no uso de recursos públicos é fundamental para a boa governança e o controle social.
 No Brasil, as emendas parlamentares são um dos mecanismos pelos quais deputados e senadores destinam recursos do orçamento federal para ações e projetos específicos, abrangendo áreas como saúde, educação e infraestrutura.
